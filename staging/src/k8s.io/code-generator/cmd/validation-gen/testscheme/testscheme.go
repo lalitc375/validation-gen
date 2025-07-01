@@ -502,10 +502,6 @@ func (v *ValidationTester) expectInvalid(matcher matcher, errs ...*field.Error) 
 
 type matcher func(err *field.Error) string
 
-func byDetail(err *field.Error) string {
-	return err.Detail
-}
-
 func byFullError(err *field.Error) string {
 	return err.Error()
 }
