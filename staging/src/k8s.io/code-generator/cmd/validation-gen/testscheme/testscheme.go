@@ -479,7 +479,7 @@ func (v *ValidationTester) expectInvalid(matcher matcher, errs ...*field.Error) 
 
 	v.T.Run(fmt.Sprintf("%T", v.value), func(t *testing.T) {
 		t.Helper()
-
+		// I am here.
 		want := sets.New[string]()
 		for _, e := range errs {
 			want.Insert(matcher(e))
