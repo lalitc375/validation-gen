@@ -51,25 +51,27 @@ func RegisterValidations(scheme *testscheme.Scheme) error {
 
 // Validate_Struct validates an instance of Struct according
 // to declarative validation rules in the API schema.
-func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *Struct) (errs field.ErrorList) {
+func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *Struct, runAllValidations bool) (errs field.ErrorList) {
 	// field Struct.TypeMeta has no validation
 
 	// field Struct.ListField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj []Item) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+					return nil
+				}
+				// call field-attached validations
+				func() { // cohort {"key1": "a"}
+					errs = append(errs, validate.SliceItem(ctx, op, fldPath, obj, oldObj, func(item *Item) bool { return item.Key1 == "a" }, validate.DirectEqual, validate.ImmutableByCompare)...)
+				}()
+				func() { // cohort {"key1": "b"}
+					errs = append(errs, validate.SliceItem(ctx, op, fldPath, obj, oldObj, func(item *Item) bool { return item.Key1 == "b" }, validate.DirectEqual, func(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *Item) field.ErrorList {
+						return validate.Subfield(ctx, op, fldPath, obj, oldObj, "stringField", func(o *Item) *string { return &o.StringField }, validate.DirectEqualPtr, validate.ImmutableByCompare)
+					})...)
+				}()
 			}
-			// call field-attached validations
-			func() { // cohort {"key1": "a"}
-				errs = append(errs, validate.SliceItem(ctx, op, fldPath, obj, oldObj, func(item *Item) bool { return item.Key1 == "a" }, validate.DirectEqual, validate.ImmutableByCompare)...)
-			}()
-			func() { // cohort {"key1": "b"}
-				errs = append(errs, validate.SliceItem(ctx, op, fldPath, obj, oldObj, func(item *Item) bool { return item.Key1 == "b" }, validate.DirectEqual, func(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *Item) field.ErrorList {
-					return validate.Subfield(ctx, op, fldPath, obj, oldObj, "stringField", func(o *Item) *string { return &o.StringField }, validate.DirectEqualPtr, validate.ImmutableByCompare)
-				})...)
-			}()
 			return
 		}(fldPath.Child("listField"), obj.ListField, safe.Field(oldObj, func(oldObj *Struct) []Item { return oldObj.ListField }))...)
 

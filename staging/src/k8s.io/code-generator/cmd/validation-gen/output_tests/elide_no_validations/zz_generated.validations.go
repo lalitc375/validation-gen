@@ -50,16 +50,18 @@ func RegisterValidations(scheme *testscheme.Scheme) error {
 
 // Validate_HasFieldVal validates an instance of HasFieldVal according
 // to declarative validation rules in the API schema.
-func Validate_HasFieldVal(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *HasFieldVal) (errs field.ErrorList) {
+func Validate_HasFieldVal(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *HasFieldVal, runAllValidations bool) (errs field.ErrorList) {
 	// field HasFieldVal.S
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *string) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "field HasFieldVal.S")...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "field HasFieldVal.S")...)
 			return
 		}(fldPath.Child("s"), &obj.S, safe.Field(oldObj, func(oldObj *HasFieldVal) *string { return &oldObj.S }))...)
 
@@ -68,8 +70,10 @@ func Validate_HasFieldVal(ctx context.Context, op operation.Operation, fldPath *
 
 // Validate_HasTypeVal validates an instance of HasTypeVal according
 // to declarative validation rules in the API schema.
-func Validate_HasTypeVal(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *HasTypeVal) (errs field.ErrorList) {
-	errs = append(errs, validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "type HasTypeVal")...)
+func Validate_HasTypeVal(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *HasTypeVal, runAllValidations bool) (errs field.ErrorList) {
+	if runAllValidations {
+		errs = append(errs, validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "type HasTypeVal")...)
+	}
 
 	// field HasTypeVal.S has no validation
 	return errs
@@ -77,7 +81,7 @@ func Validate_HasTypeVal(ctx context.Context, op operation.Operation, fldPath *f
 
 // Validate_T1 validates an instance of T1 according
 // to declarative validation rules in the API schema.
-func Validate_T1(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *T1) (errs field.ErrorList) {
+func Validate_T1(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *T1, runAllValidations bool) (errs field.ErrorList) {
 	// field T1.TypeMeta has no validation
 
 	// field T1.HasTypeVal
@@ -88,7 +92,7 @@ func Validate_T1(ctx context.Context, op operation.Operation, fldPath *field.Pat
 				return nil
 			}
 			// call the type's validation function
-			errs = append(errs, Validate_HasTypeVal(ctx, op, fldPath, obj, oldObj)...)
+			errs = append(errs, Validate_HasTypeVal(ctx, op, fldPath, obj, oldObj, runAllValidations)...)
 			return
 		}(fldPath.Child("hasTypeVal"), &obj.HasTypeVal, safe.Field(oldObj, func(oldObj *T1) *HasTypeVal { return &oldObj.HasTypeVal }))...)
 
@@ -100,7 +104,7 @@ func Validate_T1(ctx context.Context, op operation.Operation, fldPath *field.Pat
 				return nil
 			}
 			// call the type's validation function
-			errs = append(errs, Validate_HasFieldVal(ctx, op, fldPath, obj, oldObj)...)
+			errs = append(errs, Validate_HasFieldVal(ctx, op, fldPath, obj, oldObj, runAllValidations)...)
 			return
 		}(fldPath.Child("hasFieldVal"), &obj.HasFieldVal, safe.Field(oldObj, func(oldObj *T1) *HasFieldVal { return &oldObj.HasFieldVal }))...)
 
@@ -109,12 +113,14 @@ func Validate_T1(ctx context.Context, op operation.Operation, fldPath *field.Pat
 	// field T1.HasNoValFieldVal
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *HasNoVal) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "field T1.HasNoValFieldVal")...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "field T1.HasNoValFieldVal")...)
 			return
 		}(fldPath.Child("hasNoValFieldVal"), &obj.HasNoValFieldVal, safe.Field(oldObj, func(oldObj *T1) *HasNoVal { return &oldObj.HasNoValFieldVal }))...)
 

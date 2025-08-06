@@ -83,26 +83,32 @@ func RegisterValidations(scheme *testscheme.Scheme) error {
 
 // Validate_OtherString validates an instance of OtherString according
 // to declarative validation rules in the API schema.
-func Validate_OtherString(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *OtherString) (errs field.ErrorList) {
-	errs = append(errs, validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "type OtherString")...)
+func Validate_OtherString(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *OtherString, runAllValidations bool) (errs field.ErrorList) {
+	if runAllValidations {
+		errs = append(errs, validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "type OtherString")...)
+	}
 
 	return errs
 }
 
 // Validate_OtherStruct validates an instance of OtherStruct according
 // to declarative validation rules in the API schema.
-func Validate_OtherStruct(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *OtherStruct) (errs field.ErrorList) {
-	errs = append(errs, validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "type OtherStruct")...)
+func Validate_OtherStruct(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *OtherStruct, runAllValidations bool) (errs field.ErrorList) {
+	if runAllValidations {
+		errs = append(errs, validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "type OtherStruct")...)
+	}
 
 	// field OtherStruct.StringField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *string) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "field OtherStruct.StringField")...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "field OtherStruct.StringField")...)
 			return
 		}(fldPath.Child("stringField"), &obj.StringField, safe.Field(oldObj, func(oldObj *OtherStruct) *string { return &oldObj.StringField }))...)
 
@@ -111,81 +117,91 @@ func Validate_OtherStruct(ctx context.Context, op operation.Operation, fldPath *
 
 // Validate_Struct validates an instance of Struct according
 // to declarative validation rules in the API schema.
-func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *Struct) (errs field.ErrorList) {
+func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *Struct, runAllValidations bool) (errs field.ErrorList) {
 	// field Struct.TypeMeta has no validation
 
 	// field Struct.StructField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *OtherStruct) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "field Struct.StructField")...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "field Struct.StructField")...)
 			// call the type's validation function
-			errs = append(errs, Validate_OtherStruct(ctx, op, fldPath, obj, oldObj)...)
+			errs = append(errs, Validate_OtherStruct(ctx, op, fldPath, obj, oldObj, runAllValidations)...)
 			return
 		}(fldPath.Child("structField"), &obj.StructField, safe.Field(oldObj, func(oldObj *Struct) *OtherStruct { return &oldObj.StructField }))...)
 
 	// field Struct.StructPtrField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *OtherStruct) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
+					return nil
+				}
+				// call field-attached validations
+				if e := validate.RequiredPointer(ctx, op, fldPath, obj, oldObj); len(e) != 0 {
+					errs = append(errs, e...)
+					return // do not proceed
+				}
+				errs = append(errs, validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "field Struct.StructPtrField")...)
 			}
-			// call field-attached validations
-			if e := validate.RequiredPointer(ctx, op, fldPath, obj, oldObj); len(e) != 0 {
-				errs = append(errs, e...)
-				return // do not proceed
-			}
-			errs = append(errs, validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "field Struct.StructPtrField")...)
 			// call the type's validation function
-			errs = append(errs, Validate_OtherStruct(ctx, op, fldPath, obj, oldObj)...)
+			errs = append(errs, Validate_OtherStruct(ctx, op, fldPath, obj, oldObj, runAllValidations)...)
 			return
 		}(fldPath.Child("structPtrField"), obj.StructPtrField, safe.Field(oldObj, func(oldObj *Struct) *OtherStruct { return oldObj.StructPtrField }))...)
 
 	// field Struct.OpaqueStructField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *OtherStruct) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "field Struct.OpaqueStructField")...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "field Struct.OpaqueStructField")...)
 			return
 		}(fldPath.Child("opaqueStructField"), &obj.OpaqueStructField, safe.Field(oldObj, func(oldObj *Struct) *OtherStruct { return &oldObj.OpaqueStructField }))...)
 
 	// field Struct.OpaqueStructPtrField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *OtherStruct) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
+					return nil
+				}
+				// call field-attached validations
+				if e := validate.RequiredPointer(ctx, op, fldPath, obj, oldObj); len(e) != 0 {
+					errs = append(errs, e...)
+					return // do not proceed
+				}
+				errs = append(errs, validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "field Struct.OpaqueStructPtrField")...)
 			}
-			// call field-attached validations
-			if e := validate.RequiredPointer(ctx, op, fldPath, obj, oldObj); len(e) != 0 {
-				errs = append(errs, e...)
-				return // do not proceed
-			}
-			errs = append(errs, validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "field Struct.OpaqueStructPtrField")...)
 			return
 		}(fldPath.Child("opaqueStructPtrField"), obj.OpaqueStructPtrField, safe.Field(oldObj, func(oldObj *Struct) *OtherStruct { return oldObj.OpaqueStructPtrField }))...)
 
 	// field Struct.SliceOfStructField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj []OtherStruct) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "field Struct.SliceOfStructField")...)
+				errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, func(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *OtherStruct) field.ErrorList {
+					return validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "field Struct.SliceOfStructField vals")
+				})...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "field Struct.SliceOfStructField")...)
-			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, func(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *OtherStruct) field.ErrorList {
-				return validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "field Struct.SliceOfStructField vals")
-			})...)
 			// iterate the list and call the type's validation function
 			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, Validate_OtherStruct)...)
 			return
@@ -194,30 +210,34 @@ func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field
 	// field Struct.SliceOfOpaqueStructField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj []OtherStruct) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "field Struct.SliceOfOpaqueStructField")...)
+				errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, func(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *OtherStruct) field.ErrorList {
+					return validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "field Struct.SliceOfOpaqueStructField vals")
+				})...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "field Struct.SliceOfOpaqueStructField")...)
-			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, func(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *OtherStruct) field.ErrorList {
-				return validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "field Struct.SliceOfOpaqueStructField vals")
-			})...)
 			return
 		}(fldPath.Child("sliceOfOpaqueStructField"), obj.SliceOfOpaqueStructField, safe.Field(oldObj, func(oldObj *Struct) []OtherStruct { return oldObj.SliceOfOpaqueStructField }))...)
 
 	// field Struct.ListMapOfStructField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj []OtherStruct) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "field Struct.ListMapOfStructField")...)
+				errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, func(a OtherStruct, b OtherStruct) bool { return a.StringField == b.StringField }, validate.DirectEqual, func(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *OtherStruct) field.ErrorList {
+					return validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "field Struct.ListMapOfStructField vals")
+				})...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "field Struct.ListMapOfStructField")...)
-			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, func(a OtherStruct, b OtherStruct) bool { return a.StringField == b.StringField }, validate.DirectEqual, func(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *OtherStruct) field.ErrorList {
-				return validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "field Struct.ListMapOfStructField vals")
-			})...)
 			// iterate the list and call the type's validation function
 			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, func(a OtherStruct, b OtherStruct) bool { return a.StringField == b.StringField }, validate.DirectEqual, Validate_OtherStruct)...)
 			return
@@ -226,33 +246,37 @@ func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field
 	// field Struct.ListMapOfOpaqueStructField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj []OtherStruct) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "field Struct.ListMapOfOpaqueStructField")...)
+				errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, func(a OtherStruct, b OtherStruct) bool { return a.StringField == b.StringField }, validate.DirectEqual, func(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *OtherStruct) field.ErrorList {
+					return validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "field Struct.ListMapOfOpaqueStructField vals")
+				})...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "field Struct.ListMapOfOpaqueStructField")...)
-			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, func(a OtherStruct, b OtherStruct) bool { return a.StringField == b.StringField }, validate.DirectEqual, func(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *OtherStruct) field.ErrorList {
-				return validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "field Struct.ListMapOfOpaqueStructField vals")
-			})...)
 			return
 		}(fldPath.Child("listMapOfOpaqueStructField"), obj.ListMapOfOpaqueStructField, safe.Field(oldObj, func(oldObj *Struct) []OtherStruct { return oldObj.ListMapOfOpaqueStructField }))...)
 
 	// field Struct.MapOfStringToStructField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj map[OtherString]OtherStruct) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.EachMapKey(ctx, op, fldPath, obj, oldObj, func(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *OtherString) field.ErrorList {
+					return validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "field Struct.MapOfStringToStructField keys")
+				})...)
+				errs = append(errs, validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "field Struct.MapOfStringToStructField")...)
+				errs = append(errs, validate.EachMapVal(ctx, op, fldPath, obj, oldObj, validate.DirectEqual, func(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *OtherStruct) field.ErrorList {
+					return validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "field Struct.MapOfStringToStructField vals")
+				})...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.EachMapKey(ctx, op, fldPath, obj, oldObj, func(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *OtherString) field.ErrorList {
-				return validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "field Struct.MapOfStringToStructField keys")
-			})...)
-			errs = append(errs, validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "field Struct.MapOfStringToStructField")...)
-			errs = append(errs, validate.EachMapVal(ctx, op, fldPath, obj, oldObj, validate.DirectEqual, func(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *OtherStruct) field.ErrorList {
-				return validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "field Struct.MapOfStringToStructField vals")
-			})...)
 			// iterate the map and call the key type's validation function
 			errs = append(errs, validate.EachMapKey(ctx, op, fldPath, obj, oldObj, Validate_OtherString)...)
 			// iterate the map and call the value type's validation function
@@ -263,18 +287,20 @@ func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field
 	// field Struct.MapOfStringToOpaqueStructField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj map[OtherString]OtherStruct) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.EachMapKey(ctx, op, fldPath, obj, oldObj, func(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *OtherString) field.ErrorList {
+					return validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "field Struct.MapOfStringToOpaqueStructField keys")
+				})...)
+				errs = append(errs, validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "field Struct.MapOfStringToOpaqueStructField")...)
+				errs = append(errs, validate.EachMapVal(ctx, op, fldPath, obj, oldObj, validate.DirectEqual, func(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *OtherStruct) field.ErrorList {
+					return validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "field Struct.MapOfStringToOpaqueStructField vals")
+				})...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.EachMapKey(ctx, op, fldPath, obj, oldObj, func(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *OtherString) field.ErrorList {
-				return validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "field Struct.MapOfStringToOpaqueStructField keys")
-			})...)
-			errs = append(errs, validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "field Struct.MapOfStringToOpaqueStructField")...)
-			errs = append(errs, validate.EachMapVal(ctx, op, fldPath, obj, oldObj, validate.DirectEqual, func(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *OtherStruct) field.ErrorList {
-				return validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "field Struct.MapOfStringToOpaqueStructField vals")
-			})...)
 			return
 		}(fldPath.Child("mapOfStringToOpaqueStructField"), obj.MapOfStringToOpaqueStructField, safe.Field(oldObj, func(oldObj *Struct) map[OtherString]OtherStruct { return oldObj.MapOfStringToOpaqueStructField }))...)
 
@@ -283,16 +309,20 @@ func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field
 
 // Validate_TypedefMapOther validates an instance of TypedefMapOther according
 // to declarative validation rules in the API schema.
-func Validate_TypedefMapOther(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj TypedefMapOther) (errs field.ErrorList) {
-	errs = append(errs, validate.FixedResult(ctx, op, fldPath, obj, oldObj, true, "type TypedefMapOther")...)
+func Validate_TypedefMapOther(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj TypedefMapOther, runAllValidations bool) (errs field.ErrorList) {
+	if runAllValidations {
+		errs = append(errs, validate.FixedResult(ctx, op, fldPath, obj, oldObj, true, "type TypedefMapOther")...)
+	}
 
 	return errs
 }
 
 // Validate_TypedefSliceOther validates an instance of TypedefSliceOther according
 // to declarative validation rules in the API schema.
-func Validate_TypedefSliceOther(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj TypedefSliceOther) (errs field.ErrorList) {
-	errs = append(errs, validate.FixedResult(ctx, op, fldPath, obj, oldObj, true, "type TypedefSliceOther")...)
+func Validate_TypedefSliceOther(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj TypedefSliceOther, runAllValidations bool) (errs field.ErrorList) {
+	if runAllValidations {
+		errs = append(errs, validate.FixedResult(ctx, op, fldPath, obj, oldObj, true, "type TypedefSliceOther")...)
+	}
 
 	return errs
 }

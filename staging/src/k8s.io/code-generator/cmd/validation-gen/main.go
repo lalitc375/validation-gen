@@ -74,11 +74,12 @@ func main() {
 }
 
 type Args struct {
-	OutputFile   string
-	ReadOnlyPkgs []string // Always consider these as last-ditch possibilities for validations.
-	GoHeaderFile string
-	PrintDocs    bool
-	LintOnly     bool
+	OutputFile      string
+	ReadOnlyPkgs    []string // Always consider these as last-ditch possibilities for validations.
+	GoHeaderFile    string
+	PrintDocs       bool
+	LintOnly        bool
+	DVOnlyRulesFile string
 }
 
 // AddFlags add the generator flags to the flag set.
@@ -93,6 +94,7 @@ func (args *Args) AddFlags(fs *pflag.FlagSet) {
 		"print documentation for supported declarative validations, and then exit")
 	fs.BoolVar(&args.LintOnly, "lint", false,
 		"only run linting checks, do not generate code")
+	fs.StringVar(&args.DVOnlyRulesFile, "dv-only-rules-file", "", "Path to the YAML file with the list of DV-only validation rules.")
 }
 
 // Validate checks the given arguments.

@@ -59,98 +59,112 @@ func RegisterValidations(scheme *testscheme.Scheme) error {
 
 // Validate_ImmutableStruct validates an instance of ImmutableStruct according
 // to declarative validation rules in the API schema.
-func Validate_ImmutableStruct(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *ImmutableStruct) (errs field.ErrorList) {
+func Validate_ImmutableStruct(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *ImmutableStruct, runAllValidations bool) (errs field.ErrorList) {
 	// field ImmutableStruct.TypeMeta has no validation
 
 	// field ImmutableStruct.SliceComparableField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj []ComparableStruct) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, validate.ImmutableByCompare)...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, validate.ImmutableByCompare)...)
 			return
 		}(fldPath.Child("sliceComparableField"), obj.SliceComparableField, safe.Field(oldObj, func(oldObj *ImmutableStruct) []ComparableStruct { return oldObj.SliceComparableField }))...)
 
 	// field ImmutableStruct.SliceSetComparableField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj []ComparableStruct) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, validate.DirectEqual, nil, validate.ImmutableByCompare)...)
+				// listType=set requires unique values
+				errs = append(errs, validate.Unique(ctx, op, fldPath, obj, oldObj, validate.DirectEqual)...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, validate.DirectEqual, nil, validate.ImmutableByCompare)...)
-			// listType=set requires unique values
-			errs = append(errs, validate.Unique(ctx, op, fldPath, obj, oldObj, validate.DirectEqual)...)
 			return
 		}(fldPath.Child("sliceSetComparableField"), obj.SliceSetComparableField, safe.Field(oldObj, func(oldObj *ImmutableStruct) []ComparableStruct { return oldObj.SliceSetComparableField }))...)
 
 	// field ImmutableStruct.SliceNonComparableField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj []NonComparableStruct) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, validate.ImmutableByReflect)...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, validate.ImmutableByReflect)...)
 			return
 		}(fldPath.Child("sliceNonComparableField"), obj.SliceNonComparableField, safe.Field(oldObj, func(oldObj *ImmutableStruct) []NonComparableStruct { return oldObj.SliceNonComparableField }))...)
 
 	// field ImmutableStruct.SliceSetNonComparableField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj []NonComparableStruct) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, validate.SemanticDeepEqual, nil, validate.ImmutableByReflect)...)
+				// listType=set requires unique values
+				errs = append(errs, validate.Unique(ctx, op, fldPath, obj, oldObj, validate.SemanticDeepEqual)...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, validate.SemanticDeepEqual, nil, validate.ImmutableByReflect)...)
-			// listType=set requires unique values
-			errs = append(errs, validate.Unique(ctx, op, fldPath, obj, oldObj, validate.SemanticDeepEqual)...)
 			return
 		}(fldPath.Child("sliceSetNonComparableField"), obj.SliceSetNonComparableField, safe.Field(oldObj, func(oldObj *ImmutableStruct) []NonComparableStruct { return oldObj.SliceSetNonComparableField }))...)
 
 	// field ImmutableStruct.SlicePrimitiveField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj []int) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, validate.ImmutableByCompare)...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, validate.ImmutableByCompare)...)
 			return
 		}(fldPath.Child("slicePrimitiveField"), obj.SlicePrimitiveField, safe.Field(oldObj, func(oldObj *ImmutableStruct) []int { return oldObj.SlicePrimitiveField }))...)
 
 	// field ImmutableStruct.SliceSetPrimitiveField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj []int) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, validate.DirectEqual, nil, validate.ImmutableByCompare)...)
+				// listType=set requires unique values
+				errs = append(errs, validate.Unique(ctx, op, fldPath, obj, oldObj, validate.DirectEqual)...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, validate.DirectEqual, nil, validate.ImmutableByCompare)...)
-			// listType=set requires unique values
-			errs = append(errs, validate.Unique(ctx, op, fldPath, obj, oldObj, validate.DirectEqual)...)
 			return
 		}(fldPath.Child("sliceSetPrimitiveField"), obj.SliceSetPrimitiveField, safe.Field(oldObj, func(oldObj *ImmutableStruct) []int { return oldObj.SliceSetPrimitiveField }))...)
 
 	// field ImmutableStruct.SliceSetFalselyComparableField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj []FalselyComparableStruct) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, validate.SemanticDeepEqual, nil, validate.ImmutableByReflect)...)
+				// listType=set requires unique values
+				errs = append(errs, validate.Unique(ctx, op, fldPath, obj, oldObj, validate.SemanticDeepEqual)...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, validate.SemanticDeepEqual, nil, validate.ImmutableByReflect)...)
-			// listType=set requires unique values
-			errs = append(errs, validate.Unique(ctx, op, fldPath, obj, oldObj, validate.SemanticDeepEqual)...)
 			return
 		}(fldPath.Child("sliceSetFalselyComparableField"), obj.SliceSetFalselyComparableField, safe.Field(oldObj, func(oldObj *ImmutableStruct) []FalselyComparableStruct { return oldObj.SliceSetFalselyComparableField }))...)
 
@@ -159,71 +173,81 @@ func Validate_ImmutableStruct(ctx context.Context, op operation.Operation, fldPa
 
 // Validate_Struct validates an instance of Struct according
 // to declarative validation rules in the API schema.
-func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *Struct) (errs field.ErrorList) {
+func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *Struct, runAllValidations bool) (errs field.ErrorList) {
 	// field Struct.TypeMeta has no validation
 
 	// field Struct.SliceStringField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj []string) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+					return nil
+				}
+				// call field-attached validations
+				// listType=set requires unique values
+				errs = append(errs, validate.Unique(ctx, op, fldPath, obj, oldObj, validate.DirectEqual)...)
 			}
-			// call field-attached validations
-			// listType=set requires unique values
-			errs = append(errs, validate.Unique(ctx, op, fldPath, obj, oldObj, validate.DirectEqual)...)
 			return
 		}(fldPath.Child("sliceStringField"), obj.SliceStringField, safe.Field(oldObj, func(oldObj *Struct) []string { return oldObj.SliceStringField }))...)
 
 	// field Struct.SliceIntField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj []int) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+					return nil
+				}
+				// call field-attached validations
+				// listType=set requires unique values
+				errs = append(errs, validate.Unique(ctx, op, fldPath, obj, oldObj, validate.DirectEqual)...)
 			}
-			// call field-attached validations
-			// listType=set requires unique values
-			errs = append(errs, validate.Unique(ctx, op, fldPath, obj, oldObj, validate.DirectEqual)...)
 			return
 		}(fldPath.Child("sliceIntField"), obj.SliceIntField, safe.Field(oldObj, func(oldObj *Struct) []int { return oldObj.SliceIntField }))...)
 
 	// field Struct.SliceComparableField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj []ComparableStruct) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+					return nil
+				}
+				// call field-attached validations
+				// listType=set requires unique values
+				errs = append(errs, validate.Unique(ctx, op, fldPath, obj, oldObj, validate.DirectEqual)...)
 			}
-			// call field-attached validations
-			// listType=set requires unique values
-			errs = append(errs, validate.Unique(ctx, op, fldPath, obj, oldObj, validate.DirectEqual)...)
 			return
 		}(fldPath.Child("sliceComparableField"), obj.SliceComparableField, safe.Field(oldObj, func(oldObj *Struct) []ComparableStruct { return oldObj.SliceComparableField }))...)
 
 	// field Struct.SliceNonComparableField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj []NonComparableStruct) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+					return nil
+				}
+				// call field-attached validations
+				// listType=set requires unique values
+				errs = append(errs, validate.Unique(ctx, op, fldPath, obj, oldObj, validate.SemanticDeepEqual)...)
 			}
-			// call field-attached validations
-			// listType=set requires unique values
-			errs = append(errs, validate.Unique(ctx, op, fldPath, obj, oldObj, validate.SemanticDeepEqual)...)
 			return
 		}(fldPath.Child("sliceNonComparableField"), obj.SliceNonComparableField, safe.Field(oldObj, func(oldObj *Struct) []NonComparableStruct { return oldObj.SliceNonComparableField }))...)
 
 	// field Struct.SliceFalselyComparableField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj []FalselyComparableStruct) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+					return nil
+				}
+				// call field-attached validations
+				// listType=set requires unique values
+				errs = append(errs, validate.Unique(ctx, op, fldPath, obj, oldObj, validate.SemanticDeepEqual)...)
 			}
-			// call field-attached validations
-			// listType=set requires unique values
-			errs = append(errs, validate.Unique(ctx, op, fldPath, obj, oldObj, validate.SemanticDeepEqual)...)
 			return
 		}(fldPath.Child("sliceFalselyComparableField"), obj.SliceFalselyComparableField, safe.Field(oldObj, func(oldObj *Struct) []FalselyComparableStruct { return oldObj.SliceFalselyComparableField }))...)
 

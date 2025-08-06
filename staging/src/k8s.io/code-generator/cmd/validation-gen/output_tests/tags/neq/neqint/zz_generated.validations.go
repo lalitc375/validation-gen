@@ -50,42 +50,48 @@ func RegisterValidations(scheme *testscheme.Scheme) error {
 
 // Validate_Struct validates an instance of Struct according
 // to declarative validation rules in the API schema.
-func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *Struct) (errs field.ErrorList) {
+func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *Struct, runAllValidations bool) (errs field.ErrorList) {
 	// field Struct.TypeMeta has no validation
 
 	// field Struct.IntField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *int) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.NEQ(ctx, op, fldPath, obj, oldObj, 0)...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.NEQ(ctx, op, fldPath, obj, oldObj, 0)...)
 			return
 		}(fldPath.Child("intField"), &obj.IntField, safe.Field(oldObj, func(oldObj *Struct) *int { return &oldObj.IntField }))...)
 
 	// field Struct.IntPtrField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *int) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.NEQ(ctx, op, fldPath, obj, oldObj, -1)...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.NEQ(ctx, op, fldPath, obj, oldObj, -1)...)
 			return
 		}(fldPath.Child("intPtrField"), obj.IntPtrField, safe.Field(oldObj, func(oldObj *Struct) *int { return oldObj.IntPtrField }))...)
 
 	// field Struct.IntTypedefField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *IntType) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.NEQ(ctx, op, fldPath, obj, oldObj, 42)...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.NEQ(ctx, op, fldPath, obj, oldObj, 42)...)
 			return
 		}(fldPath.Child("intTypedefField"), &obj.IntTypedefField, safe.Field(oldObj, func(oldObj *Struct) *IntType { return &oldObj.IntTypedefField }))...)
 
@@ -97,7 +103,7 @@ func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field
 				return nil
 			}
 			// call the type's validation function
-			errs = append(errs, Validate_ValidatedIntType(ctx, op, fldPath, obj, oldObj)...)
+			errs = append(errs, Validate_ValidatedIntType(ctx, op, fldPath, obj, oldObj, runAllValidations)...)
 			return
 		}(fldPath.Child("validatedTypedefField"), &obj.ValidatedTypedefField, safe.Field(oldObj, func(oldObj *Struct) *ValidatedIntType { return &oldObj.ValidatedTypedefField }))...)
 
@@ -106,8 +112,10 @@ func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field
 
 // Validate_ValidatedIntType validates an instance of ValidatedIntType according
 // to declarative validation rules in the API schema.
-func Validate_ValidatedIntType(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *ValidatedIntType) (errs field.ErrorList) {
-	errs = append(errs, validate.NEQ(ctx, op, fldPath, obj, oldObj, 100)...)
+func Validate_ValidatedIntType(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *ValidatedIntType, runAllValidations bool) (errs field.ErrorList) {
+	if runAllValidations {
+		errs = append(errs, validate.NEQ(ctx, op, fldPath, obj, oldObj, 100)...)
+	}
 
 	return errs
 }

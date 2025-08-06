@@ -75,7 +75,7 @@ func RegisterValidations(scheme *testscheme.Scheme) error {
 
 // Validate_T1 validates an instance of T1 according
 // to declarative validation rules in the API schema.
-func Validate_T1(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *T1) (errs field.ErrorList) {
+func Validate_T1(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *T1, runAllValidations bool) (errs field.ErrorList) {
 	// field T1.T2
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *T2) (errs field.ErrorList) {
@@ -84,7 +84,7 @@ func Validate_T1(ctx context.Context, op operation.Operation, fldPath *field.Pat
 				return nil
 			}
 			// call the type's validation function
-			errs = append(errs, Validate_T2(ctx, op, fldPath, obj, oldObj)...)
+			errs = append(errs, Validate_T2(ctx, op, fldPath, obj, oldObj, runAllValidations)...)
 			return
 		}(fldPath.Child("t2"), &obj.T2, safe.Field(oldObj, func(oldObj *T1) *T2 { return &oldObj.T2 }))...)
 
@@ -96,7 +96,7 @@ func Validate_T1(ctx context.Context, op operation.Operation, fldPath *field.Pat
 				return nil
 			}
 			// call the type's validation function
-			errs = append(errs, Validate_T3(ctx, op, fldPath, obj, oldObj)...)
+			errs = append(errs, Validate_T3(ctx, op, fldPath, obj, oldObj, runAllValidations)...)
 			return
 		}(fldPath.Child("t3"), &obj.T3, safe.Field(oldObj, func(oldObj *T1) *T3 { return &oldObj.T3 }))...)
 
@@ -105,7 +105,7 @@ func Validate_T1(ctx context.Context, op operation.Operation, fldPath *field.Pat
 
 // Validate_T2 validates an instance of T2 according
 // to declarative validation rules in the API schema.
-func Validate_T2(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *T2) (errs field.ErrorList) {
+func Validate_T2(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *T2, runAllValidations bool) (errs field.ErrorList) {
 	// field T2.ST1
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj []T1) (errs field.ErrorList) {
@@ -123,8 +123,10 @@ func Validate_T2(ctx context.Context, op operation.Operation, fldPath *field.Pat
 
 // Validate_T3 validates an instance of T3 according
 // to declarative validation rules in the API schema.
-func Validate_T3(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *T3) (errs field.ErrorList) {
-	errs = append(errs, validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "type T3")...)
+func Validate_T3(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *T3, runAllValidations bool) (errs field.ErrorList) {
+	if runAllValidations {
+		errs = append(errs, validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "type T3")...)
+	}
 
 	// field T3.T4
 	errs = append(errs,
@@ -134,7 +136,7 @@ func Validate_T3(ctx context.Context, op operation.Operation, fldPath *field.Pat
 				return nil
 			}
 			// call the type's validation function
-			errs = append(errs, Validate_T4(ctx, op, fldPath, obj, oldObj)...)
+			errs = append(errs, Validate_T4(ctx, op, fldPath, obj, oldObj, runAllValidations)...)
 			return
 		}(fldPath.Child("t4"), &obj.T4, safe.Field(oldObj, func(oldObj *T3) *T4 { return &oldObj.T4 }))...)
 
@@ -143,7 +145,7 @@ func Validate_T3(ctx context.Context, op operation.Operation, fldPath *field.Pat
 
 // Validate_T4 validates an instance of T4 according
 // to declarative validation rules in the API schema.
-func Validate_T4(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *T4) (errs field.ErrorList) {
+func Validate_T4(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *T4, runAllValidations bool) (errs field.ErrorList) {
 	// field T4.ST3
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj []T3) (errs field.ErrorList) {

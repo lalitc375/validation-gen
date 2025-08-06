@@ -50,30 +50,34 @@ func RegisterValidations(scheme *testscheme.Scheme) error {
 
 // Validate_Struct validates an instance of Struct according
 // to declarative validation rules in the API schema.
-func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *Struct) (errs field.ErrorList) {
+func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *Struct, runAllValidations bool) (errs field.ErrorList) {
 	// field Struct.TypeMeta has no validation
 
 	// field Struct.NeqTrueField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *bool) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.NEQ(ctx, op, fldPath, obj, oldObj, true)...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.NEQ(ctx, op, fldPath, obj, oldObj, true)...)
 			return
 		}(fldPath.Child("neqTrueField"), &obj.NeqTrueField, safe.Field(oldObj, func(oldObj *Struct) *bool { return &oldObj.NeqTrueField }))...)
 
 	// field Struct.NeqFalsePtrField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *bool) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.NEQ(ctx, op, fldPath, obj, oldObj, false)...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.NEQ(ctx, op, fldPath, obj, oldObj, false)...)
 			return
 		}(fldPath.Child("neqFalsePtrField"), obj.NeqFalsePtrField, safe.Field(oldObj, func(oldObj *Struct) *bool { return oldObj.NeqFalsePtrField }))...)
 
@@ -85,7 +89,7 @@ func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field
 				return nil
 			}
 			// call the type's validation function
-			errs = append(errs, Validate_ValidatedBoolType(ctx, op, fldPath, obj, oldObj)...)
+			errs = append(errs, Validate_ValidatedBoolType(ctx, op, fldPath, obj, oldObj, runAllValidations)...)
 			return
 		}(fldPath.Child("validatedTypedefField"), &obj.ValidatedTypedefField, safe.Field(oldObj, func(oldObj *Struct) *ValidatedBoolType { return &oldObj.ValidatedTypedefField }))...)
 
@@ -94,8 +98,10 @@ func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field
 
 // Validate_ValidatedBoolType validates an instance of ValidatedBoolType according
 // to declarative validation rules in the API schema.
-func Validate_ValidatedBoolType(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *ValidatedBoolType) (errs field.ErrorList) {
-	errs = append(errs, validate.NEQ(ctx, op, fldPath, obj, oldObj, true)...)
+func Validate_ValidatedBoolType(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *ValidatedBoolType, runAllValidations bool) (errs field.ErrorList) {
+	if runAllValidations {
+		errs = append(errs, validate.NEQ(ctx, op, fldPath, obj, oldObj, true)...)
+	}
 
 	return errs
 }

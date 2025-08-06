@@ -67,20 +67,22 @@ func RegisterValidations(scheme *testscheme.Scheme) error {
 
 // Validate_T1 validates an instance of T1 according
 // to declarative validation rules in the API schema.
-func Validate_T1(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *T1) (errs field.ErrorList) {
+func Validate_T1(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *T1, runAllValidations bool) (errs field.ErrorList) {
 	// field T1.PT1
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *T1) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
-				return nil
-			}
-			// call field-attached validations
-			if e := validate.OptionalPointer(ctx, op, fldPath, obj, oldObj); len(e) != 0 {
-				return // do not proceed
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+					return nil
+				}
+				// call field-attached validations
+				if e := validate.OptionalPointer(ctx, op, fldPath, obj, oldObj); len(e) != 0 {
+					return // do not proceed
+				}
 			}
 			// call the type's validation function
-			errs = append(errs, Validate_T1(ctx, op, fldPath, obj, oldObj)...)
+			errs = append(errs, Validate_T1(ctx, op, fldPath, obj, oldObj, runAllValidations)...)
 			return
 		}(fldPath.Child("pt1"), obj.PT1, safe.Field(oldObj, func(oldObj *T1) *T1 { return oldObj.PT1 }))...)
 
@@ -92,23 +94,25 @@ func Validate_T1(ctx context.Context, op operation.Operation, fldPath *field.Pat
 				return nil
 			}
 			// call the type's validation function
-			errs = append(errs, Validate_T2(ctx, op, fldPath, obj, oldObj)...)
+			errs = append(errs, Validate_T2(ctx, op, fldPath, obj, oldObj, runAllValidations)...)
 			return
 		}(fldPath.Child("t2"), &obj.T2, safe.Field(oldObj, func(oldObj *T1) *T2 { return &oldObj.T2 }))...)
 
 	// field T1.PT2
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *T2) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
-				return nil
-			}
-			// call field-attached validations
-			if e := validate.OptionalPointer(ctx, op, fldPath, obj, oldObj); len(e) != 0 {
-				return // do not proceed
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+					return nil
+				}
+				// call field-attached validations
+				if e := validate.OptionalPointer(ctx, op, fldPath, obj, oldObj); len(e) != 0 {
+					return // do not proceed
+				}
 			}
 			// call the type's validation function
-			errs = append(errs, Validate_T2(ctx, op, fldPath, obj, oldObj)...)
+			errs = append(errs, Validate_T2(ctx, op, fldPath, obj, oldObj, runAllValidations)...)
 			return
 		}(fldPath.Child("pt2"), obj.PT2, safe.Field(oldObj, func(oldObj *T1) *T2 { return oldObj.PT2 }))...)
 
@@ -117,52 +121,58 @@ func Validate_T1(ctx context.Context, op operation.Operation, fldPath *field.Pat
 
 // Validate_T2 validates an instance of T2 according
 // to declarative validation rules in the API schema.
-func Validate_T2(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *T2) (errs field.ErrorList) {
+func Validate_T2(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *T2, runAllValidations bool) (errs field.ErrorList) {
 	// field T2.PT1
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *T1) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
-				return nil
-			}
-			// call field-attached validations
-			if e := validate.OptionalPointer(ctx, op, fldPath, obj, oldObj); len(e) != 0 {
-				return // do not proceed
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+					return nil
+				}
+				// call field-attached validations
+				if e := validate.OptionalPointer(ctx, op, fldPath, obj, oldObj); len(e) != 0 {
+					return // do not proceed
+				}
 			}
 			// call the type's validation function
-			errs = append(errs, Validate_T1(ctx, op, fldPath, obj, oldObj)...)
+			errs = append(errs, Validate_T1(ctx, op, fldPath, obj, oldObj, runAllValidations)...)
 			return
 		}(fldPath.Child("pt1"), obj.PT1, safe.Field(oldObj, func(oldObj *T2) *T1 { return oldObj.PT1 }))...)
 
 	// field T2.PT2
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *T2) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
-				return nil
-			}
-			// call field-attached validations
-			if e := validate.OptionalPointer(ctx, op, fldPath, obj, oldObj); len(e) != 0 {
-				return // do not proceed
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+					return nil
+				}
+				// call field-attached validations
+				if e := validate.OptionalPointer(ctx, op, fldPath, obj, oldObj); len(e) != 0 {
+					return // do not proceed
+				}
 			}
 			// call the type's validation function
-			errs = append(errs, Validate_T2(ctx, op, fldPath, obj, oldObj)...)
+			errs = append(errs, Validate_T2(ctx, op, fldPath, obj, oldObj, runAllValidations)...)
 			return
 		}(fldPath.Child("pt2"), obj.PT2, safe.Field(oldObj, func(oldObj *T2) *T2 { return oldObj.PT2 }))...)
 
 	// field T2.PT3
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *T3) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
-				return nil
-			}
-			// call field-attached validations
-			if e := validate.OptionalPointer(ctx, op, fldPath, obj, oldObj); len(e) != 0 {
-				return // do not proceed
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
+					return nil
+				}
+				// call field-attached validations
+				if e := validate.OptionalPointer(ctx, op, fldPath, obj, oldObj); len(e) != 0 {
+					return // do not proceed
+				}
 			}
 			// call the type's validation function
-			errs = append(errs, Validate_T3(ctx, op, fldPath, obj, oldObj)...)
+			errs = append(errs, Validate_T3(ctx, op, fldPath, obj, oldObj, runAllValidations)...)
 			return
 		}(fldPath.Child("pt3"), obj.PT3, safe.Field(oldObj, func(oldObj *T2) *T3 { return oldObj.PT3 }))...)
 
@@ -171,8 +181,10 @@ func Validate_T2(ctx context.Context, op operation.Operation, fldPath *field.Pat
 
 // Validate_T3 validates an instance of T3 according
 // to declarative validation rules in the API schema.
-func Validate_T3(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *T3) (errs field.ErrorList) {
-	errs = append(errs, validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "type T3")...)
+func Validate_T3(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *T3, runAllValidations bool) (errs field.ErrorList) {
+	if runAllValidations {
+		errs = append(errs, validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "type T3")...)
+	}
 
 	// field T3.I has no validation
 	return errs

@@ -51,25 +51,27 @@ func RegisterValidations(scheme *testscheme.Scheme) error {
 
 // Validate_Struct validates an instance of Struct according
 // to declarative validation rules in the API schema.
-func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *Struct) (errs field.ErrorList) {
+func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *Struct, runAllValidations bool) (errs field.ErrorList) {
 	// field Struct.TypeMeta has no validation
 
 	// field Struct.Items
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj []Item) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+					return nil
+				}
+				// call field-attached validations
+				func() { // cohort {"stringKey": "target", "intKey": 42, "boolKey": true}
+					errs = append(errs, validate.SliceItem(ctx, op, fldPath, obj, oldObj, func(item *Item) bool { return item.StringKey == "target" && item.IntKey == 42 && item.BoolKey == true }, validate.DirectEqual, func(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *Item) field.ErrorList {
+						return validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "item Items[stringKey=target,intKey=42,boolKey=true] 1")
+					})...)
+					errs = append(errs, validate.SliceItem(ctx, op, fldPath, obj, oldObj, func(item *Item) bool { return item.StringKey == "target" && item.IntKey == 42 && item.BoolKey == true }, validate.DirectEqual, func(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *Item) field.ErrorList {
+						return validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "item Items[stringKey=target,intKey=42,boolKey=true] 2")
+					})...)
+				}()
 			}
-			// call field-attached validations
-			func() { // cohort {"stringKey": "target", "intKey": 42, "boolKey": true}
-				errs = append(errs, validate.SliceItem(ctx, op, fldPath, obj, oldObj, func(item *Item) bool { return item.StringKey == "target" && item.IntKey == 42 && item.BoolKey == true }, validate.DirectEqual, func(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *Item) field.ErrorList {
-					return validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "item Items[stringKey=target,intKey=42,boolKey=true] 1")
-				})...)
-				errs = append(errs, validate.SliceItem(ctx, op, fldPath, obj, oldObj, func(item *Item) bool { return item.StringKey == "target" && item.IntKey == 42 && item.BoolKey == true }, validate.DirectEqual, func(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *Item) field.ErrorList {
-					return validate.FixedResult(ctx, op, fldPath, obj, oldObj, false, "item Items[stringKey=target,intKey=42,boolKey=true] 2")
-				})...)
-			}()
 			return
 		}(fldPath.Child("items"), obj.Items, safe.Field(oldObj, func(oldObj *Struct) []Item { return oldObj.Items }))...)
 

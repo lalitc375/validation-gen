@@ -50,38 +50,44 @@ func RegisterValidations(scheme *testscheme.Scheme) error {
 
 // Validate_IPStringType validates an instance of IPStringType according
 // to declarative validation rules in the API schema.
-func Validate_IPStringType(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *IPStringType) (errs field.ErrorList) {
-	errs = append(errs, validate.IPSloppy(ctx, op, fldPath, obj, oldObj)...)
+func Validate_IPStringType(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *IPStringType, runAllValidations bool) (errs field.ErrorList) {
+	if runAllValidations {
+		errs = append(errs, validate.IPSloppy(ctx, op, fldPath, obj, oldObj)...)
+	}
 
 	return errs
 }
 
 // Validate_Struct validates an instance of Struct according
 // to declarative validation rules in the API schema.
-func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *Struct) (errs field.ErrorList) {
+func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *Struct, runAllValidations bool) (errs field.ErrorList) {
 	// field Struct.TypeMeta has no validation
 
 	// field Struct.IPField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *string) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.IPSloppy(ctx, op, fldPath, obj, oldObj)...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.IPSloppy(ctx, op, fldPath, obj, oldObj)...)
 			return
 		}(fldPath.Child("ipField"), &obj.IPField, safe.Field(oldObj, func(oldObj *Struct) *string { return &oldObj.IPField }))...)
 
 	// field Struct.IPPtrField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *string) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.IPSloppy(ctx, op, fldPath, obj, oldObj)...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.IPSloppy(ctx, op, fldPath, obj, oldObj)...)
 			return
 		}(fldPath.Child("ipPtrField"), obj.IPPtrField, safe.Field(oldObj, func(oldObj *Struct) *string { return oldObj.IPPtrField }))...)
 
@@ -93,7 +99,7 @@ func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field
 				return nil
 			}
 			// call the type's validation function
-			errs = append(errs, Validate_IPStringType(ctx, op, fldPath, obj, oldObj)...)
+			errs = append(errs, Validate_IPStringType(ctx, op, fldPath, obj, oldObj, runAllValidations)...)
 			return
 		}(fldPath.Child("ipTypedefField"), &obj.IPTypedefField, safe.Field(oldObj, func(oldObj *Struct) *IPStringType { return &oldObj.IPTypedefField }))...)
 

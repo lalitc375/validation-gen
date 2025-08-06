@@ -38,6 +38,12 @@ import (
 	"k8s.io/klog/v2"
 )
 
+type DVOnlyRule struct {
+	Type       string
+	Field      string
+	Validation string
+}
+
 func mkPkgNames(pkg string, names ...string) []types.Name {
 	result := make([]types.Name, 0, len(names))
 	for _, name := range names {
@@ -69,10 +75,11 @@ type genValidations struct {
 	discovered     *typeDiscoverer
 	imports        namer.ImportTracker
 	schemeRegistry types.Name
+	dvOnlyRules    map[DVOnlyRule]struct{}
 }
 
 // NewGenValidations creates a new generator for the specified package.
-func NewGenValidations(outputFilename, outputPackage string, rootTypes []*types.Type, discovered *typeDiscoverer, inputToPkg map[string]string, schemeRegistry types.Name) generator.Generator {
+func NewGenValidations(outputFilename, outputPackage string, rootTypes []*types.Type, discovered *typeDiscoverer, inputToPkg map[string]string, schemeRegistry types.Name, dvOnlyRules map[DVOnlyRule]struct{}) generator.Generator {
 	return &genValidations{
 		GoGenerator: generator.GoGenerator{
 			OutputFilename: outputFilename,
@@ -83,7 +90,40 @@ func NewGenValidations(outputFilename, outputPackage string, rootTypes []*types.
 		discovered:     discovered,
 		imports:        generator.NewImportTrackerForPackage(outputPackage),
 		schemeRegistry: schemeRegistry,
+		dvOnlyRules:    dvOnlyRules,
 	}
+}
+
+func (g *genValidations) partitionValidations(t *types.Type, fieldName string, validations validators.Validations) (dvOnly, other validators.Validations) {
+	isDVOnly := func(fn validators.FunctionGen) bool {
+		if g.dvOnlyRules == nil {
+			return false
+		}
+		rule := DVOnlyRule{
+			Type:       t.String(),
+			Field:      fieldName,
+			Validation: fn.TagName,
+		}
+		_, ok := g.dvOnlyRules[rule]
+		return ok
+	}
+
+	for _, fn := range validations.Functions {
+		if isDVOnly(fn) {
+			dvOnly.Functions = append(dvOnly.Functions, fn)
+		} else {
+			other.Functions = append(other.Functions, fn)
+		}
+	}
+
+	dvOnly.OpaqueType = validations.OpaqueType
+	dvOnly.OpaqueKeyType = validations.OpaqueKeyType
+	dvOnly.OpaqueValType = validations.OpaqueValType
+	other.OpaqueType = validations.OpaqueType
+	other.OpaqueKeyType = validations.OpaqueKeyType
+	other.OpaqueValType = validations.OpaqueValType
+
+	return
 }
 
 func (g *genValidations) Namers(_ *generator.Context) namer.NameSystems {
@@ -916,7 +956,7 @@ func (g *genValidations) emitValidationFunction(c *generator.Context, t *types.T
 	sw.Do("    ctx $.context.Context|raw$, ", targs)
 	sw.Do("    op $.operation.Operation|raw$, ", targs)
 	sw.Do("    fldPath *$.field.Path|raw$, ", targs)
-	sw.Do("    obj, oldObj $.objTypePfx$$.inType|raw$) ", targs)
+	sw.Do("    obj, oldObj $.objTypePfx$$.inType|raw$, runAllValidations bool) ", targs)
 	sw.Do("(errs $.field.ErrorList|raw$) {\n", targs)
 	fakeChild := &childNode{
 		node:      node,
@@ -956,7 +996,16 @@ func (g *genValidations) emitValidationForChild(c *generator.Context, thisChild 
 			panic(fmt.Sprintf("unexpected type-validations on type %v, kind %s", thisNode.valueType, thisNode.valueType.Kind))
 		}
 		emitComments(validations.Comments, sw)
-		emitCallsToValidators(c, validations.Functions, sw)
+		dvOnly, other := g.partitionValidations(thisNode.valueType, "", validations)
+
+		if !dvOnly.Empty() {
+			emitCallsToValidators(c, dvOnly.Functions, sw)
+		}
+		if !other.Empty() {
+			sw.Do("if runAllValidations {\n", nil)
+			emitCallsToValidators(c, other.Functions, sw)
+			sw.Do("}\n", nil)
+		}
 		if thisNode.valueType.Kind == types.Alias {
 			underlyingNode := thisNode.underlying.node
 			switch underlyingNode.valueType.Kind {
@@ -1054,10 +1103,27 @@ func (g *genValidations) emitValidationForChild(c *generator.Context, thisChild 
 			fldRatchetingChecked := false
 			if !validations.Empty() {
 				emitComments(validations.Comments, bufsw)
-				emitRatchetingCheck(c, fld.childType, bufsw)
-				fldRatchetingChecked = true
-				bufsw.Do("// call field-attached validations\n", nil)
-				emitCallsToValidators(c, validations.Functions, bufsw)
+				dvOnly, other := g.partitionValidations(thisNode.valueType, fld.name, validations)
+
+				if !dvOnly.Empty() {
+					if !fldRatchetingChecked {
+						emitRatchetingCheck(c, fld.childType, bufsw)
+						fldRatchetingChecked = true
+					}
+					bufsw.Do("// call field-attached validations\n", nil)
+					emitCallsToValidators(c, dvOnly.Functions, bufsw)
+				}
+
+				if !other.Empty() {
+					bufsw.Do("if runAllValidations {\n", nil)
+					if !fldRatchetingChecked {
+						emitRatchetingCheck(c, fld.childType, bufsw)
+						fldRatchetingChecked = true
+					}
+					bufsw.Do("// call field-attached validations\n", nil)
+					emitCallsToValidators(c, other.Functions, bufsw)
+					bufsw.Do("}\n", nil)
+				}
 			}
 
 			// If the node is nil, this must be a type in a package we are not
@@ -1177,7 +1243,7 @@ func (g *genValidations) emitCallToOtherTypeFunc(c *generator.Context, node *typ
 		"funcName": c.Universe.Type(node.funcName),
 	}
 	sw.Do("// call the type's validation function\n", nil)
-	sw.Do("errs = append(errs, $.funcName|raw$(ctx, op, fldPath, obj, oldObj)...)\n", targs)
+	sw.Do("errs = append(errs, $.funcName|raw$(ctx, op, fldPath, obj, oldObj, runAllValidations)...)\n", targs)
 }
 
 // emitRatchetingCheck emits an equivalence check for default ratcheting.

@@ -50,21 +50,23 @@ func RegisterValidations(scheme *testscheme.Scheme) error {
 
 // Validate_Struct validates an instance of Struct according
 // to declarative validation rules in the API schema.
-func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *Struct) (errs field.ErrorList) {
+func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *Struct, runAllValidations bool) (errs field.ErrorList) {
 	// field Struct.TypeMeta has no validation
 
 	// field Struct.StringField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *string) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
-				return nil
-			}
-			// call field-attached validations
-			// optional fields with default values are effectively required
-			if e := validate.RequiredValue(ctx, op, fldPath, obj, oldObj); len(e) != 0 {
-				errs = append(errs, e...)
-				return // do not proceed
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
+					return nil
+				}
+				// call field-attached validations
+				// optional fields with default values are effectively required
+				if e := validate.RequiredValue(ctx, op, fldPath, obj, oldObj); len(e) != 0 {
+					errs = append(errs, e...)
+					return // do not proceed
+				}
 			}
 			return
 		}(fldPath.Child("stringField"), &obj.StringField, safe.Field(oldObj, func(oldObj *Struct) *string { return &oldObj.StringField }))...)
@@ -72,15 +74,17 @@ func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field
 	// field Struct.StringPtrField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *string) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
-				return nil
-			}
-			// call field-attached validations
-			// optional fields with default values are effectively required
-			if e := validate.RequiredPointer(ctx, op, fldPath, obj, oldObj); len(e) != 0 {
-				errs = append(errs, e...)
-				return // do not proceed
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
+					return nil
+				}
+				// call field-attached validations
+				// optional fields with default values are effectively required
+				if e := validate.RequiredPointer(ctx, op, fldPath, obj, oldObj); len(e) != 0 {
+					errs = append(errs, e...)
+					return // do not proceed
+				}
 			}
 			return
 		}(fldPath.Child("stringPtrField"), obj.StringPtrField, safe.Field(oldObj, func(oldObj *Struct) *string { return oldObj.StringPtrField }))...)
@@ -88,15 +92,17 @@ func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field
 	// field Struct.IntField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *int) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
-				return nil
-			}
-			// call field-attached validations
-			// optional fields with default values are effectively required
-			if e := validate.RequiredValue(ctx, op, fldPath, obj, oldObj); len(e) != 0 {
-				errs = append(errs, e...)
-				return // do not proceed
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
+					return nil
+				}
+				// call field-attached validations
+				// optional fields with default values are effectively required
+				if e := validate.RequiredValue(ctx, op, fldPath, obj, oldObj); len(e) != 0 {
+					errs = append(errs, e...)
+					return // do not proceed
+				}
 			}
 			return
 		}(fldPath.Child("intField"), &obj.IntField, safe.Field(oldObj, func(oldObj *Struct) *int { return &oldObj.IntField }))...)
@@ -104,15 +110,17 @@ func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field
 	// field Struct.IntPtrField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *int) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
-				return nil
-			}
-			// call field-attached validations
-			// optional fields with default values are effectively required
-			if e := validate.RequiredPointer(ctx, op, fldPath, obj, oldObj); len(e) != 0 {
-				errs = append(errs, e...)
-				return // do not proceed
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
+					return nil
+				}
+				// call field-attached validations
+				// optional fields with default values are effectively required
+				if e := validate.RequiredPointer(ctx, op, fldPath, obj, oldObj); len(e) != 0 {
+					errs = append(errs, e...)
+					return // do not proceed
+				}
 			}
 			return
 		}(fldPath.Child("intPtrField"), obj.IntPtrField, safe.Field(oldObj, func(oldObj *Struct) *int { return oldObj.IntPtrField }))...)
@@ -120,15 +128,17 @@ func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field
 	// field Struct.BoolField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *bool) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
-				return nil
-			}
-			// call field-attached validations
-			// optional fields with default values are effectively required
-			if e := validate.RequiredValue(ctx, op, fldPath, obj, oldObj); len(e) != 0 {
-				errs = append(errs, e...)
-				return // do not proceed
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
+					return nil
+				}
+				// call field-attached validations
+				// optional fields with default values are effectively required
+				if e := validate.RequiredValue(ctx, op, fldPath, obj, oldObj); len(e) != 0 {
+					errs = append(errs, e...)
+					return // do not proceed
+				}
 			}
 			return
 		}(fldPath.Child("boolField"), &obj.BoolField, safe.Field(oldObj, func(oldObj *Struct) *bool { return &oldObj.BoolField }))...)
@@ -136,15 +146,17 @@ func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field
 	// field Struct.BoolPtrField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *bool) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
-				return nil
-			}
-			// call field-attached validations
-			// optional fields with default values are effectively required
-			if e := validate.RequiredPointer(ctx, op, fldPath, obj, oldObj); len(e) != 0 {
-				errs = append(errs, e...)
-				return // do not proceed
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
+					return nil
+				}
+				// call field-attached validations
+				// optional fields with default values are effectively required
+				if e := validate.RequiredPointer(ctx, op, fldPath, obj, oldObj); len(e) != 0 {
+					errs = append(errs, e...)
+					return // do not proceed
+				}
 			}
 			return
 		}(fldPath.Child("boolPtrField"), obj.BoolPtrField, safe.Field(oldObj, func(oldObj *Struct) *bool { return oldObj.BoolPtrField }))...)

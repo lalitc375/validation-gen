@@ -50,54 +50,62 @@ func RegisterValidations(scheme *testscheme.Scheme) error {
 
 // Validate_Struct validates an instance of Struct according
 // to declarative validation rules in the API schema.
-func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *Struct) (errs field.ErrorList) {
+func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *Struct, runAllValidations bool) (errs field.ErrorList) {
 	// field Struct.TypeMeta has no validation
 
 	// field Struct.StringField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *string) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.NEQ(ctx, op, fldPath, obj, oldObj, "disallowed-string")...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.NEQ(ctx, op, fldPath, obj, oldObj, "disallowed-string")...)
 			return
 		}(fldPath.Child("stringField"), &obj.StringField, safe.Field(oldObj, func(oldObj *Struct) *string { return &oldObj.StringField }))...)
 
 	// field Struct.StringPtrField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *string) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.NEQ(ctx, op, fldPath, obj, oldObj, "disallowed-pointer")...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.NEQ(ctx, op, fldPath, obj, oldObj, "disallowed-pointer")...)
 			return
 		}(fldPath.Child("stringPtrField"), obj.StringPtrField, safe.Field(oldObj, func(oldObj *Struct) *string { return oldObj.StringPtrField }))...)
 
 	// field Struct.StringTypedefField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *StringType) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.NEQ(ctx, op, fldPath, obj, oldObj, "disallowed-typedef")...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.NEQ(ctx, op, fldPath, obj, oldObj, "disallowed-typedef")...)
 			return
 		}(fldPath.Child("stringTypedefField"), &obj.StringTypedefField, safe.Field(oldObj, func(oldObj *Struct) *StringType { return &oldObj.StringTypedefField }))...)
 
 	// field Struct.StringTypedefPtrField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *StringType) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.NEQ(ctx, op, fldPath, obj, oldObj, "disallowed-typedef-pointer")...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.NEQ(ctx, op, fldPath, obj, oldObj, "disallowed-typedef-pointer")...)
 			return
 		}(fldPath.Child("stringTypedefPtrField"), obj.StringTypedefPtrField, safe.Field(oldObj, func(oldObj *Struct) *StringType { return oldObj.StringTypedefPtrField }))...)
 
@@ -109,7 +117,7 @@ func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field
 				return nil
 			}
 			// call the type's validation function
-			errs = append(errs, Validate_ValidatedStringType(ctx, op, fldPath, obj, oldObj)...)
+			errs = append(errs, Validate_ValidatedStringType(ctx, op, fldPath, obj, oldObj, runAllValidations)...)
 			return
 		}(fldPath.Child("validatedTypedefField"), &obj.ValidatedTypedefField, safe.Field(oldObj, func(oldObj *Struct) *ValidatedStringType { return &oldObj.ValidatedTypedefField }))...)
 
@@ -121,7 +129,7 @@ func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field
 				return nil
 			}
 			// call the type's validation function
-			errs = append(errs, Validate_ValidatedStringType(ctx, op, fldPath, obj, oldObj)...)
+			errs = append(errs, Validate_ValidatedStringType(ctx, op, fldPath, obj, oldObj, runAllValidations)...)
 			return
 		}(fldPath.Child("validatedTypedefPtrField"), obj.ValidatedTypedefPtrField, safe.Field(oldObj, func(oldObj *Struct) *ValidatedStringType { return oldObj.ValidatedTypedefPtrField }))...)
 
@@ -130,8 +138,10 @@ func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field
 
 // Validate_ValidatedStringType validates an instance of ValidatedStringType according
 // to declarative validation rules in the API schema.
-func Validate_ValidatedStringType(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *ValidatedStringType) (errs field.ErrorList) {
-	errs = append(errs, validate.NEQ(ctx, op, fldPath, obj, oldObj, "disallowed-on-type")...)
+func Validate_ValidatedStringType(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *ValidatedStringType, runAllValidations bool) (errs field.ErrorList) {
+	if runAllValidations {
+		errs = append(errs, validate.NEQ(ctx, op, fldPath, obj, oldObj, "disallowed-on-type")...)
+	}
 
 	return errs
 }

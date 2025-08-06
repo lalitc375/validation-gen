@@ -50,52 +50,60 @@ func RegisterValidations(scheme *testscheme.Scheme) error {
 
 // Validate_Struct validates an instance of Struct according
 // to declarative validation rules in the API schema.
-func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *Struct) (errs field.ErrorList) {
+func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *Struct, runAllValidations bool) (errs field.ErrorList) {
 	// field Struct.S
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *string) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.ImmutableByCompare(ctx, op, fldPath, obj, oldObj)...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.ImmutableByCompare(ctx, op, fldPath, obj, oldObj)...)
 			return
 		}(fldPath.Child("s"), &obj.S, safe.Field(oldObj, func(oldObj *Struct) *string { return &oldObj.S }))...)
 
 	// field Struct.I
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *int) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.ImmutableByCompare(ctx, op, fldPath, obj, oldObj)...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.ImmutableByCompare(ctx, op, fldPath, obj, oldObj)...)
 			return
 		}(fldPath.Child("i"), &obj.I, safe.Field(oldObj, func(oldObj *Struct) *int { return &oldObj.I }))...)
 
 	// field Struct.B
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *bool) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.ImmutableByCompare(ctx, op, fldPath, obj, oldObj)...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.ImmutableByCompare(ctx, op, fldPath, obj, oldObj)...)
 			return
 		}(fldPath.Child("b"), &obj.B, safe.Field(oldObj, func(oldObj *Struct) *bool { return &oldObj.B }))...)
 
 	// field Struct.F
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *float64) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.ImmutableByCompare(ctx, op, fldPath, obj, oldObj)...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.ImmutableByCompare(ctx, op, fldPath, obj, oldObj)...)
 			return
 		}(fldPath.Child("f"), &obj.F, safe.Field(oldObj, func(oldObj *Struct) *float64 { return &oldObj.F }))...)
 

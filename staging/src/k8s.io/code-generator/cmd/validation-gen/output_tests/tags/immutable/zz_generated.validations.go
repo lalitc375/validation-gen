@@ -51,110 +51,128 @@ func RegisterValidations(scheme *testscheme.Scheme) error {
 
 // Validate_ImmutableType validates an instance of ImmutableType according
 // to declarative validation rules in the API schema.
-func Validate_ImmutableType(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *ImmutableType) (errs field.ErrorList) {
-	errs = append(errs, validate.ImmutableByCompare(ctx, op, fldPath, obj, oldObj)...)
+func Validate_ImmutableType(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *ImmutableType, runAllValidations bool) (errs field.ErrorList) {
+	if runAllValidations {
+		errs = append(errs, validate.ImmutableByCompare(ctx, op, fldPath, obj, oldObj)...)
+	}
 
 	return errs
 }
 
 // Validate_Struct validates an instance of Struct according
 // to declarative validation rules in the API schema.
-func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *Struct) (errs field.ErrorList) {
+func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *Struct, runAllValidations bool) (errs field.ErrorList) {
 	// field Struct.TypeMeta has no validation
 
 	// field Struct.StringField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *string) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.ImmutableByCompare(ctx, op, fldPath, obj, oldObj)...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.ImmutableByCompare(ctx, op, fldPath, obj, oldObj)...)
 			return
 		}(fldPath.Child("stringField"), &obj.StringField, safe.Field(oldObj, func(oldObj *Struct) *string { return &oldObj.StringField }))...)
 
 	// field Struct.StringPtrField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *string) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.ImmutableByCompare(ctx, op, fldPath, obj, oldObj)...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.ImmutableByCompare(ctx, op, fldPath, obj, oldObj)...)
 			return
 		}(fldPath.Child("stringPtrField"), obj.StringPtrField, safe.Field(oldObj, func(oldObj *Struct) *string { return oldObj.StringPtrField }))...)
 
 	// field Struct.StructField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *ComparableStruct) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.ImmutableByReflect(ctx, op, fldPath, obj, oldObj)...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.ImmutableByReflect(ctx, op, fldPath, obj, oldObj)...)
 			return
 		}(fldPath.Child("structField"), &obj.StructField, safe.Field(oldObj, func(oldObj *Struct) *ComparableStruct { return &oldObj.StructField }))...)
 
 	// field Struct.StructPtrField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *ComparableStruct) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.ImmutableByReflect(ctx, op, fldPath, obj, oldObj)...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.ImmutableByReflect(ctx, op, fldPath, obj, oldObj)...)
 			return
 		}(fldPath.Child("structPtrField"), obj.StructPtrField, safe.Field(oldObj, func(oldObj *Struct) *ComparableStruct { return oldObj.StructPtrField }))...)
 
 	// field Struct.NonComparableStructField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *NonComparableStruct) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.ImmutableByReflect(ctx, op, fldPath, obj, oldObj)...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.ImmutableByReflect(ctx, op, fldPath, obj, oldObj)...)
 			return
 		}(fldPath.Child("noncomparableStructField"), &obj.NonComparableStructField, safe.Field(oldObj, func(oldObj *Struct) *NonComparableStruct { return &oldObj.NonComparableStructField }))...)
 
 	// field Struct.NonComparableStructPtrField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *NonComparableStruct) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.ImmutableByReflect(ctx, op, fldPath, obj, oldObj)...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.ImmutableByReflect(ctx, op, fldPath, obj, oldObj)...)
 			return
 		}(fldPath.Child("noncomparableStructPtrField"), obj.NonComparableStructPtrField, safe.Field(oldObj, func(oldObj *Struct) *NonComparableStruct { return oldObj.NonComparableStructPtrField }))...)
 
 	// field Struct.SliceField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj []string) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.ImmutableByReflect(ctx, op, fldPath, obj, oldObj)...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.ImmutableByReflect(ctx, op, fldPath, obj, oldObj)...)
 			return
 		}(fldPath.Child("sliceField"), obj.SliceField, safe.Field(oldObj, func(oldObj *Struct) []string { return oldObj.SliceField }))...)
 
 	// field Struct.MapField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj map[string]string) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.ImmutableByReflect(ctx, op, fldPath, obj, oldObj)...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.ImmutableByReflect(ctx, op, fldPath, obj, oldObj)...)
 			return
 		}(fldPath.Child("mapField"), obj.MapField, safe.Field(oldObj, func(oldObj *Struct) map[string]string { return oldObj.MapField }))...)
 
@@ -166,7 +184,7 @@ func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field
 				return nil
 			}
 			// call the type's validation function
-			errs = append(errs, Validate_ImmutableType(ctx, op, fldPath, obj, oldObj)...)
+			errs = append(errs, Validate_ImmutableType(ctx, op, fldPath, obj, oldObj, runAllValidations)...)
 			return
 		}(fldPath.Child("immutableField"), &obj.ImmutableField, safe.Field(oldObj, func(oldObj *Struct) *ImmutableType { return &oldObj.ImmutableField }))...)
 
@@ -178,7 +196,7 @@ func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field
 				return nil
 			}
 			// call the type's validation function
-			errs = append(errs, Validate_ImmutableType(ctx, op, fldPath, obj, oldObj)...)
+			errs = append(errs, Validate_ImmutableType(ctx, op, fldPath, obj, oldObj, runAllValidations)...)
 			return
 		}(fldPath.Child("immutablePtrField"), obj.ImmutablePtrField, safe.Field(oldObj, func(oldObj *Struct) *ImmutableType { return oldObj.ImmutablePtrField }))...)
 

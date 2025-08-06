@@ -50,16 +50,18 @@ func RegisterValidations(scheme *testscheme.Scheme) error {
 
 // Validate_T1 validates an instance of T1 according
 // to declarative validation rules in the API schema.
-func Validate_T1(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *T1) (errs field.ErrorList) {
+func Validate_T1(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *T1, runAllValidations bool) (errs field.ErrorList) {
 	// field T1.S
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *string) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.FixedResult(ctx, op, fldPath, obj, oldObj, true, "field T1.S")...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.FixedResult(ctx, op, fldPath, obj, oldObj, true, "field T1.S")...)
 			return
 		}(fldPath.Child("s"), &obj.S, safe.Field(oldObj, func(oldObj *T1) *string { return &oldObj.S }))...)
 

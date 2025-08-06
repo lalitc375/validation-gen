@@ -50,38 +50,44 @@ func RegisterValidations(scheme *testscheme.Scheme) error {
 
 // Validate_LongNameStringType validates an instance of LongNameStringType according
 // to declarative validation rules in the API schema.
-func Validate_LongNameStringType(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *LongNameStringType) (errs field.ErrorList) {
-	errs = append(errs, validate.LongName(ctx, op, fldPath, obj, oldObj)...)
+func Validate_LongNameStringType(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *LongNameStringType, runAllValidations bool) (errs field.ErrorList) {
+	if runAllValidations {
+		errs = append(errs, validate.LongName(ctx, op, fldPath, obj, oldObj)...)
+	}
 
 	return errs
 }
 
 // Validate_Struct validates an instance of Struct according
 // to declarative validation rules in the API schema.
-func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *Struct) (errs field.ErrorList) {
+func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *Struct, runAllValidations bool) (errs field.ErrorList) {
 	// field Struct.TypeMeta has no validation
 
 	// field Struct.LongNameField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *string) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.LongName(ctx, op, fldPath, obj, oldObj)...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.LongName(ctx, op, fldPath, obj, oldObj)...)
 			return
 		}(fldPath.Child("longNameField"), &obj.LongNameField, safe.Field(oldObj, func(oldObj *Struct) *string { return &oldObj.LongNameField }))...)
 
 	// field Struct.LongNamePtrField
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *string) (errs field.ErrorList) {
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.LongName(ctx, op, fldPath, obj, oldObj)...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.LongName(ctx, op, fldPath, obj, oldObj)...)
 			return
 		}(fldPath.Child("longNamePtrField"), obj.LongNamePtrField, safe.Field(oldObj, func(oldObj *Struct) *string { return oldObj.LongNamePtrField }))...)
 
@@ -93,7 +99,7 @@ func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field
 				return nil
 			}
 			// call the type's validation function
-			errs = append(errs, Validate_LongNameStringType(ctx, op, fldPath, obj, oldObj)...)
+			errs = append(errs, Validate_LongNameStringType(ctx, op, fldPath, obj, oldObj, runAllValidations)...)
 			return
 		}(fldPath.Child("longNameTypedefField"), &obj.LongNameTypedefField, safe.Field(oldObj, func(oldObj *Struct) *LongNameStringType { return &oldObj.LongNameTypedefField }))...)
 

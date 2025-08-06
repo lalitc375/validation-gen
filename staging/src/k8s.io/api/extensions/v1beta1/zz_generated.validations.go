@@ -50,7 +50,7 @@ func RegisterValidations(scheme *runtime.Scheme) error {
 
 // Validate_Scale validates an instance of Scale according
 // to declarative validation rules in the API schema.
-func Validate_Scale(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *Scale) (errs field.ErrorList) {
+func Validate_Scale(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *Scale, runAllValidations bool) (errs field.ErrorList) {
 	// field Scale.TypeMeta has no validation
 	// field Scale.ObjectMeta has no validation
 
@@ -62,7 +62,7 @@ func Validate_Scale(ctx context.Context, op operation.Operation, fldPath *field.
 				return nil
 			}
 			// call the type's validation function
-			errs = append(errs, Validate_ScaleSpec(ctx, op, fldPath, obj, oldObj)...)
+			errs = append(errs, Validate_ScaleSpec(ctx, op, fldPath, obj, oldObj, runAllValidations)...)
 			return
 		}(fldPath.Child("spec"), &obj.Spec, safe.Field(oldObj, func(oldObj *Scale) *ScaleSpec { return &oldObj.Spec }))...)
 
@@ -72,17 +72,19 @@ func Validate_Scale(ctx context.Context, op operation.Operation, fldPath *field.
 
 // Validate_ScaleSpec validates an instance of ScaleSpec according
 // to declarative validation rules in the API schema.
-func Validate_ScaleSpec(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *ScaleSpec) (errs field.ErrorList) {
+func Validate_ScaleSpec(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *ScaleSpec, runAllValidations bool) (errs field.ErrorList) {
 	// field ScaleSpec.Replicas
 	errs = append(errs,
 		func(fldPath *field.Path, obj, oldObj *int32) (errs field.ErrorList) {
 			// optional value-type fields with zero-value defaults are purely documentation
-			// don't revalidate unchanged data
-			if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
-				return nil
+			if runAllValidations {
+				// don't revalidate unchanged data
+				if op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
+					return nil
+				}
+				// call field-attached validations
+				errs = append(errs, validate.Minimum(ctx, op, fldPath, obj, oldObj, 0)...)
 			}
-			// call field-attached validations
-			errs = append(errs, validate.Minimum(ctx, op, fldPath, obj, oldObj, 0)...)
 			return
 		}(fldPath.Child("replicas"), &obj.Replicas, safe.Field(oldObj, func(oldObj *ScaleSpec) *int32 { return &oldObj.Replicas }))...)
 

@@ -19,10 +19,12 @@ package main
 import (
 	"cmp"
 	"fmt"
+	"os"
 	"reflect"
 	"slices"
 	"strings"
 
+	"gopkg.in/yaml.v2"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/code-generator/cmd/validation-gen/validators"
 	"k8s.io/gengo/v2"
@@ -232,6 +234,10 @@ func DefaultNameSystem() string {
 }
 
 func GetTargets(context *generator.Context, args *Args) []generator.Target {
+	if err := loadDVOnlyRules(args.DVOnlyRulesFile); err != nil {
+		klog.Fatalf("Error loading DV-only rules: %v", err)
+	}
+
 	boilerplate, err := gengo.GoBoilerplate(args.GoHeaderFile, gengo.StdBuildTag, gengo.StdGeneratedBy)
 	if err != nil {
 		klog.Fatalf("Failed loading boilerplate: %v", err)
@@ -406,7 +412,7 @@ func GetTargets(context *generator.Context, args *Args) []generator.Target {
 
 				GeneratorsFunc: func(c *generator.Context) (generators []generator.Generator) {
 					generators = []generator.Generator{
-						NewGenValidations(args.OutputFile, pkg.Path, rootTypes, td, inputToPkg, schemeRegistry),
+						NewGenValidations(args.OutputFile, pkg.Path, rootTypes, td, inputToPkg, schemeRegistry, dvOnlyRules),
 					}
 					testFixtureTags := testFixtureTag(pkg)
 					if testFixtureTags.Len() > 0 {
@@ -450,4 +456,30 @@ func isTypeWith(t *types.Type, typesWith []string) bool {
 		}
 	}
 	return false
+}
+
+// Create a set for fast lookups.
+var dvOnlyRules = make(map[DVOnlyRule]struct{})
+
+// Implement a function to load the rules from the file.
+func loadDVOnlyRules(path string) error {
+	if path == "" {
+		return nil
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("failed to read dv-only-rules-file: %w", err)
+	}
+
+	var config struct {
+		Rules []DVOnlyRule `yaml:"rules"`
+	}
+	if err := yaml.Unmarshal(data, &config); err != nil {
+		return fmt.Errorf("failed to parse dv-only-rules-file: %w", err)
+	}
+
+	for _, rule := range config.Rules {
+		dvOnlyRules[rule] = struct{}{}
+	}
+	return nil
 }

@@ -53,8 +53,10 @@ var symbolsForEnum0 = sets.New[Enum0]()
 
 // Validate_Enum0 validates an instance of Enum0 according
 // to declarative validation rules in the API schema.
-func Validate_Enum0(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *Enum0) (errs field.ErrorList) {
-	errs = append(errs, validate.Enum(ctx, op, fldPath, obj, oldObj, symbolsForEnum0)...)
+func Validate_Enum0(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *Enum0, runAllValidations bool) (errs field.ErrorList) {
+	if runAllValidations {
+		errs = append(errs, validate.Enum(ctx, op, fldPath, obj, oldObj, symbolsForEnum0)...)
+	}
 
 	return errs
 }
@@ -63,8 +65,10 @@ var symbolsForEnum1 = sets.New[Enum1](E1V1)
 
 // Validate_Enum1 validates an instance of Enum1 according
 // to declarative validation rules in the API schema.
-func Validate_Enum1(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *Enum1) (errs field.ErrorList) {
-	errs = append(errs, validate.Enum(ctx, op, fldPath, obj, oldObj, symbolsForEnum1)...)
+func Validate_Enum1(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *Enum1, runAllValidations bool) (errs field.ErrorList) {
+	if runAllValidations {
+		errs = append(errs, validate.Enum(ctx, op, fldPath, obj, oldObj, symbolsForEnum1)...)
+	}
 
 	return errs
 }
@@ -73,15 +77,17 @@ var symbolsForEnum2 = sets.New[Enum2](E2V1, E2V2)
 
 // Validate_Enum2 validates an instance of Enum2 according
 // to declarative validation rules in the API schema.
-func Validate_Enum2(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *Enum2) (errs field.ErrorList) {
-	errs = append(errs, validate.Enum(ctx, op, fldPath, obj, oldObj, symbolsForEnum2)...)
+func Validate_Enum2(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *Enum2, runAllValidations bool) (errs field.ErrorList) {
+	if runAllValidations {
+		errs = append(errs, validate.Enum(ctx, op, fldPath, obj, oldObj, symbolsForEnum2)...)
+	}
 
 	return errs
 }
 
 // Validate_Struct validates an instance of Struct according
 // to declarative validation rules in the API schema.
-func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *Struct) (errs field.ErrorList) {
+func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *Struct, runAllValidations bool) (errs field.ErrorList) {
 	// field Struct.TypeMeta has no validation
 
 	// field Struct.Enum0Field
@@ -92,7 +98,7 @@ func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field
 				return nil
 			}
 			// call the type's validation function
-			errs = append(errs, Validate_Enum0(ctx, op, fldPath, obj, oldObj)...)
+			errs = append(errs, Validate_Enum0(ctx, op, fldPath, obj, oldObj, runAllValidations)...)
 			return
 		}(fldPath.Child("enum0Field"), &obj.Enum0Field, safe.Field(oldObj, func(oldObj *Struct) *Enum0 { return &oldObj.Enum0Field }))...)
 
@@ -104,7 +110,7 @@ func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field
 				return nil
 			}
 			// call the type's validation function
-			errs = append(errs, Validate_Enum0(ctx, op, fldPath, obj, oldObj)...)
+			errs = append(errs, Validate_Enum0(ctx, op, fldPath, obj, oldObj, runAllValidations)...)
 			return
 		}(fldPath.Child("enum0PtrField"), obj.Enum0PtrField, safe.Field(oldObj, func(oldObj *Struct) *Enum0 { return oldObj.Enum0PtrField }))...)
 
@@ -116,7 +122,7 @@ func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field
 				return nil
 			}
 			// call the type's validation function
-			errs = append(errs, Validate_Enum1(ctx, op, fldPath, obj, oldObj)...)
+			errs = append(errs, Validate_Enum1(ctx, op, fldPath, obj, oldObj, runAllValidations)...)
 			return
 		}(fldPath.Child("enum1Field"), &obj.Enum1Field, safe.Field(oldObj, func(oldObj *Struct) *Enum1 { return &oldObj.Enum1Field }))...)
 
@@ -128,7 +134,7 @@ func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field
 				return nil
 			}
 			// call the type's validation function
-			errs = append(errs, Validate_Enum1(ctx, op, fldPath, obj, oldObj)...)
+			errs = append(errs, Validate_Enum1(ctx, op, fldPath, obj, oldObj, runAllValidations)...)
 			return
 		}(fldPath.Child("enum1PtrField"), obj.Enum1PtrField, safe.Field(oldObj, func(oldObj *Struct) *Enum1 { return oldObj.Enum1PtrField }))...)
 
@@ -140,7 +146,7 @@ func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field
 				return nil
 			}
 			// call the type's validation function
-			errs = append(errs, Validate_Enum2(ctx, op, fldPath, obj, oldObj)...)
+			errs = append(errs, Validate_Enum2(ctx, op, fldPath, obj, oldObj, runAllValidations)...)
 			return
 		}(fldPath.Child("enum2Field"), &obj.Enum2Field, safe.Field(oldObj, func(oldObj *Struct) *Enum2 { return &oldObj.Enum2Field }))...)
 
@@ -152,7 +158,7 @@ func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field
 				return nil
 			}
 			// call the type's validation function
-			errs = append(errs, Validate_Enum2(ctx, op, fldPath, obj, oldObj)...)
+			errs = append(errs, Validate_Enum2(ctx, op, fldPath, obj, oldObj, runAllValidations)...)
 			return
 		}(fldPath.Child("enum2PtrField"), obj.Enum2PtrField, safe.Field(oldObj, func(oldObj *Struct) *Enum2 { return oldObj.Enum2PtrField }))...)
 

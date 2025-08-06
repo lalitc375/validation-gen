@@ -51,10 +51,12 @@ func RegisterValidations(scheme *testscheme.Scheme) error {
 
 // Validate_Max0Type validates an instance of Max0Type according
 // to declarative validation rules in the API schema.
-func Validate_Max0Type(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj Max0Type) (errs field.ErrorList) {
-	if e := validate.MaxItems(ctx, op, fldPath, obj, oldObj, 0); len(e) != 0 {
-		errs = append(errs, e...)
-		return // do not proceed
+func Validate_Max0Type(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj Max0Type, runAllValidations bool) (errs field.ErrorList) {
+	if runAllValidations {
+		if e := validate.MaxItems(ctx, op, fldPath, obj, oldObj, 0); len(e) != 0 {
+			errs = append(errs, e...)
+			return // do not proceed
+		}
 	}
 
 	return errs
@@ -62,10 +64,12 @@ func Validate_Max0Type(ctx context.Context, op operation.Operation, fldPath *fie
 
 // Validate_Max0TypedefType validates an instance of Max0TypedefType according
 // to declarative validation rules in the API schema.
-func Validate_Max0TypedefType(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj Max0TypedefType) (errs field.ErrorList) {
-	if e := validate.MaxItems(ctx, op, fldPath, obj, oldObj, 0); len(e) != 0 {
-		errs = append(errs, e...)
-		return // do not proceed
+func Validate_Max0TypedefType(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj Max0TypedefType, runAllValidations bool) (errs field.ErrorList) {
+	if runAllValidations {
+		if e := validate.MaxItems(ctx, op, fldPath, obj, oldObj, 0); len(e) != 0 {
+			errs = append(errs, e...)
+			return // do not proceed
+		}
 	}
 
 	return errs
@@ -73,10 +77,12 @@ func Validate_Max0TypedefType(ctx context.Context, op operation.Operation, fldPa
 
 // Validate_Max10Type validates an instance of Max10Type according
 // to declarative validation rules in the API schema.
-func Validate_Max10Type(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj Max10Type) (errs field.ErrorList) {
-	if e := validate.MaxItems(ctx, op, fldPath, obj, oldObj, 10); len(e) != 0 {
-		errs = append(errs, e...)
-		return // do not proceed
+func Validate_Max10Type(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj Max10Type, runAllValidations bool) (errs field.ErrorList) {
+	if runAllValidations {
+		if e := validate.MaxItems(ctx, op, fldPath, obj, oldObj, 10); len(e) != 0 {
+			errs = append(errs, e...)
+			return // do not proceed
+		}
 	}
 
 	return errs
@@ -84,10 +90,12 @@ func Validate_Max10Type(ctx context.Context, op operation.Operation, fldPath *fi
 
 // Validate_Max10TypedefType validates an instance of Max10TypedefType according
 // to declarative validation rules in the API schema.
-func Validate_Max10TypedefType(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj Max10TypedefType) (errs field.ErrorList) {
-	if e := validate.MaxItems(ctx, op, fldPath, obj, oldObj, 10); len(e) != 0 {
-		errs = append(errs, e...)
-		return // do not proceed
+func Validate_Max10TypedefType(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj Max10TypedefType, runAllValidations bool) (errs field.ErrorList) {
+	if runAllValidations {
+		if e := validate.MaxItems(ctx, op, fldPath, obj, oldObj, 10); len(e) != 0 {
+			errs = append(errs, e...)
+			return // do not proceed
+		}
 	}
 
 	return errs
@@ -95,7 +103,7 @@ func Validate_Max10TypedefType(ctx context.Context, op operation.Operation, fldP
 
 // Validate_Struct validates an instance of Struct according
 // to declarative validation rules in the API schema.
-func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *Struct) (errs field.ErrorList) {
+func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *Struct, runAllValidations bool) (errs field.ErrorList) {
 	// field Struct.TypeMeta has no validation
 	// field Struct.UnvalidatedField has no validation
 
@@ -107,7 +115,7 @@ func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field
 				return nil
 			}
 			// call the type's validation function
-			errs = append(errs, Validate_Max0Type(ctx, op, fldPath, obj, oldObj)...)
+			errs = append(errs, Validate_Max0Type(ctx, op, fldPath, obj, oldObj, runAllValidations)...)
 			return
 		}(fldPath.Child("max0Field"), obj.Max0Field, safe.Field(oldObj, func(oldObj *Struct) Max0Type { return oldObj.Max0Field }))...)
 
@@ -119,7 +127,7 @@ func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field
 				return nil
 			}
 			// call the type's validation function
-			errs = append(errs, Validate_Max10Type(ctx, op, fldPath, obj, oldObj)...)
+			errs = append(errs, Validate_Max10Type(ctx, op, fldPath, obj, oldObj, runAllValidations)...)
 			return
 		}(fldPath.Child("max10Field"), obj.Max10Field, safe.Field(oldObj, func(oldObj *Struct) Max10Type { return oldObj.Max10Field }))...)
 
@@ -131,7 +139,7 @@ func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field
 				return nil
 			}
 			// call the type's validation function
-			errs = append(errs, Validate_Max0TypedefType(ctx, op, fldPath, obj, oldObj)...)
+			errs = append(errs, Validate_Max0TypedefType(ctx, op, fldPath, obj, oldObj, runAllValidations)...)
 			return
 		}(fldPath.Child("max0TypedefField"), obj.Max0TypedefField, safe.Field(oldObj, func(oldObj *Struct) Max0TypedefType { return oldObj.Max0TypedefField }))...)
 
@@ -143,7 +151,7 @@ func Validate_Struct(ctx context.Context, op operation.Operation, fldPath *field
 				return nil
 			}
 			// call the type's validation function
-			errs = append(errs, Validate_Max10TypedefType(ctx, op, fldPath, obj, oldObj)...)
+			errs = append(errs, Validate_Max10TypedefType(ctx, op, fldPath, obj, oldObj, runAllValidations)...)
 			return
 		}(fldPath.Child("max10TypedefField"), obj.Max10TypedefField, safe.Field(oldObj, func(oldObj *Struct) Max10TypedefType { return oldObj.Max10TypedefField }))...)
 
