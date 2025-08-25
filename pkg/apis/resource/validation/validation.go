@@ -17,6 +17,7 @@ limitations under the License.
 package validation
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -27,7 +28,9 @@ import (
 	"github.com/google/uuid"
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
+	"k8s.io/apimachinery/pkg/api/operation"
 	apiresource "k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/api/validate"
 	apimachineryvalidation "k8s.io/apimachinery/pkg/api/validation"
 	metav1validation "k8s.io/apimachinery/pkg/apis/meta/v1/validation"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -47,13 +50,29 @@ import (
 )
 
 var (
+	validateShortName = func(value string, fldPath *field.Path) field.ErrorList {
+		return validate.ShortName[string](context.Background(), operation.Operation{}, fldPath, &value, &value)
+	}
+	validateLongName = func(value string, fldPath *field.Path) field.ErrorList {
+		return validate.LongName[string](context.Background(), operation.Operation{}, fldPath, &value, &value)
+	}
+	validateMaxLength = func(value string, maxLength int, fldPath *field.Path) field.ErrorList {
+		return validate.LongName[string](context.Background(), operation.Operation{}, fldPath, &value, &value)
+	}
+
 	// validateResourceDriverName reuses the validation of a CSI driver because
 	// the allowed values are exactly the same.
-	validateDriverName      = corevalidation.ValidateCSIDriverName
-	validateDeviceName      = corevalidation.ValidateDNS1123Label
-	validateDeviceClassName = corevalidation.ValidateDNS1123Subdomain
-	validateRequestName     = corevalidation.ValidateDNS1123Label
-	validateCounterName     = corevalidation.ValidateDNS1123Label
+	validateDriverName = func(value string, fldPath *field.Path) field.ErrorList {
+		var errs field.ErrorList
+		errs = append(errs, validateLongName(strings.ToLower(value), fldPath)...)
+		errs = append(errs, validateMaxLength(value, 63, fldPath)...)
+		return errs
+	}
+
+	validateDeviceName      = validateShortName
+	validateDeviceClassName = validateLongName
+	validateRequestName     = validateShortName
+	validateCounterName     = validateShortName
 
 	// this is the max length limit for domain/ID
 	attributeAndCapacityMaxKeyLength = resource.DeviceMaxDomainLength + 1 + resource.DeviceMaxIDLength
