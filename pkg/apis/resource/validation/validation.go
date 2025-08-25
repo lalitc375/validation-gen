@@ -83,9 +83,7 @@ func validatePoolName(name string, fldPath *field.Path) field.ErrorList {
 	if name == "" {
 		allErrs = append(allErrs, field.Required(fldPath, ""))
 	} else {
-		if len(name) > resource.PoolNameMaxLength {
-			allErrs = append(allErrs, field.TooLong(fldPath, "" /*unused*/, resource.PoolNameMaxLength))
-		}
+		allErrs = append(allErrs, validate.MaxLength[string](context.Background(), operation.Operation{}, fldPath, &name, &name, resource.PoolNameMaxLength)...)
 		parts := strings.Split(name, "/")
 		for _, part := range parts {
 			allErrs = append(allErrs, corevalidation.ValidateDNS1123Subdomain(part, fldPath)...)
@@ -639,52 +637,18 @@ func validateResourceSliceSpec(spec, oldSpec *resource.ResourceSliceSpec, fldPat
 		allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(spec.NodeName, oldSpec.NodeName, fldPath.Child("nodeName"))...)
 	}
 
-	setFields := make([]string, 0, 4)
-	if spec.NodeName != nil {
-		if *spec.NodeName != "" {
-			setFields = append(setFields, "`nodeName`")
-			allErrs = append(allErrs, validateNodeName(*spec.NodeName, fldPath.Child("nodeName"))...)
-		} else {
-			allErrs = append(allErrs, field.Invalid(fldPath.Child("nodeName"), *spec.NodeName,
-				"must be either unset or set to a non-empty string"))
-		}
-	}
-	if spec.NodeSelector != nil {
-		setFields = append(setFields, "`nodeSelector`")
-		allErrs = append(allErrs, corevalidation.ValidateNodeSelector(spec.NodeSelector, false, fldPath.Child("nodeSelector"))...)
-		if len(spec.NodeSelector.NodeSelectorTerms) != 1 {
-			// This additional constraint simplifies merging of different selectors
-			// when devices are allocated from different slices.
-			allErrs = append(allErrs, field.Invalid(fldPath.Child("nodeSelector", "nodeSelectorTerms"), spec.NodeSelector.NodeSelectorTerms, "must have exactly one node selector term"))
-		}
-	}
-
-	if spec.AllNodes != nil {
-		if *spec.AllNodes {
-			setFields = append(setFields, "`allNodes`")
-		} else {
-			allErrs = append(allErrs, field.Invalid(fldPath.Child("allNodes"), *spec.AllNodes,
-				"must be either unset or set to true"))
-		}
-	}
-
-	if spec.PerDeviceNodeSelection != nil {
-		if *spec.PerDeviceNodeSelection {
-			setFields = append(setFields, "`perDeviceNodeSelection`")
-		} else {
-			allErrs = append(allErrs, field.Invalid(fldPath.Child("perDeviceNodeSelection"), *spec.PerDeviceNodeSelection,
-				"must be either unset or set to true"))
-		}
-	}
-
-	switch len(setFields) {
-	case 0:
-		allErrs = append(allErrs, field.Required(fldPath, "exactly one of `nodeName`, `nodeSelector`, `allNodes`, `perDeviceNodeSelection` is required"))
-	case 1:
-	default:
-		allErrs = append(allErrs, field.Invalid(fldPath, fmt.Sprintf("{%s}", strings.Join(setFields, ", ")),
-			"exactly one of `nodeName`, `nodeSelector`, `allNodes`, `perDeviceNodeSelection` is required, but multiple fields are set"))
-	}
+	allErrs = append(allErrs, validate.Union(context.Background(), operation.Operation{}, fldPath, spec, oldSpec,
+		validate.NewUnionMembership(
+			validate.NewUnionMember("nodeName"),
+			validate.NewUnionMember("nodeSelector"),
+			validate.NewUnionMember("allNodes"),
+			validate.NewUnionMember("perDeviceNodeSelection"),
+		),
+		func(s *resource.ResourceSliceSpec) bool { return s.NodeName != nil },
+		func(s *resource.ResourceSliceSpec) bool { return s.NodeSelector != nil },
+		func(s *resource.ResourceSliceSpec) bool { return s.AllNodes != nil },
+		func(s *resource.ResourceSliceSpec) bool { return s.PerDeviceNodeSelection != nil },
+	)...)
 
 	sharedCounterToCounterNames := gatherSharedCounterCounterNames(spec.SharedCounters)
 	allErrs = append(allErrs, validateSet(spec.Devices, resource.ResourceSliceMaxDevices,
@@ -1129,7 +1093,7 @@ func validateSlice[T any](slice []T, maxSize int, validateItem func(T, *field.Pa
 		// Dumping the entire field into the error message is likely to be too long,
 		// in particular when it is already beyond the maximum size. Instead this
 		// just shows the number of entries.
-		allErrs = append(allErrs, field.TooMany(fldPath, len(slice), maxSize))
+		allErrs = append(allErrs, validate.MaxItems(context.Background(), operation.Operation{}, fldPath, slice, slice, maxSize)...)
 	}
 	return allErrs
 }
