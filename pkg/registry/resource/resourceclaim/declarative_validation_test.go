@@ -23,15 +23,22 @@ import (
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	genericapirequest "k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/client-go/kubernetes/fake"
 	apitesting "k8s.io/kubernetes/pkg/api/testing"
 	"k8s.io/kubernetes/pkg/apis/resource"
+	"k8s.io/utils/ptr"
 	pointer "k8s.io/utils/ptr"
 )
 
 var apiVersions = []string{"v1beta1", "v1beta2", "v1"} // "v1alpha3" is excluded because it doesn't have ResourceClaim
+
+const (
+	validUID1 = "20354d7a-e4fe-47af-8ff6-187bca92f3f9"
+	validUID2 = "caa8b54a-eb5e-4134-8ae2-a3946a428ec7"
+)
 
 func TestDeclarativeValidate(t *testing.T) {
 	for _, apiVersion := range apiVersions {
@@ -253,6 +260,62 @@ func TestValidateStatusUpdateForDeclarative(t *testing.T) {
 				field.Invalid(poolPath, "", "").WithOrigin("format=k8s-resource-pool-name"),
 			},
 		},
+		"valid devices: without share Id": {
+			old: mkValidResourceClaim(),
+			update: mkResourceClaimWithStatus(
+				tweakStatusAllocation(
+					resource.DeviceRequestAllocationResult{Request: "req-0", Driver: "driver1", Pool: "pool1", Device: "device1"},
+					resource.DeviceRequestAllocationResult{Request: "req-0", Driver: "driver2", Pool: "pool1", Device: "device1"},
+				),
+				tweakStatusDevices(
+					resource.AllocatedDeviceStatus{Driver: "driver1", Pool: "pool1", Device: "device1"},
+					resource.AllocatedDeviceStatus{Driver: "driver2", Pool: "pool1", Device: "device1"},
+				),
+			),
+		},
+		"valid devices: with share Id": {
+			old: mkValidResourceClaim(),
+			update: mkResourceClaimWithStatus(
+				tweakStatusAllocation(
+					resource.DeviceRequestAllocationResult{Request: "req-0", Driver: "driver1", Pool: "pool1", Device: "device1", ShareID: ptr.To(types.UID(validUID1))},
+					resource.DeviceRequestAllocationResult{Request: "req-0", Driver: "driver2", Pool: "pool1", Device: "device1", ShareID: ptr.To(types.UID(validUID2))},
+				),
+				tweakStatusDevices(
+					resource.AllocatedDeviceStatus{Driver: "driver1", Pool: "pool1", Device: "device1", ShareID: ptr.To(validUID1)},
+					resource.AllocatedDeviceStatus{Driver: "driver2", Pool: "pool1", Device: "device1", ShareID: ptr.To(validUID2)},
+				),
+			),
+		},
+		"invalid devices, duplicate": {
+			old: mkValidResourceClaim(),
+			update: mkResourceClaimWithStatus(
+				tweakStatusAllocation(
+					resource.DeviceRequestAllocationResult{Request: "req-0", Driver: "driver1", Pool: "pool1", Device: "device1"},
+				),
+				tweakStatusDevices(
+					resource.AllocatedDeviceStatus{Driver: "driver1", Pool: "pool1", Device: "device1"},
+					resource.AllocatedDeviceStatus{Driver: "driver1", Pool: "pool1", Device: "device1"},
+				),
+			),
+			expectedErrs: field.ErrorList{
+				field.Duplicate(field.NewPath("status", "devices").Index(1), "driver1/pool1/device1"),
+			},
+		},
+		"invalid devices, duplicate with share ID": {
+			old: mkValidResourceClaim(),
+			update: mkResourceClaimWithStatus(
+				tweakStatusAllocation(
+					resource.DeviceRequestAllocationResult{Request: "req-0", Driver: "driver1", Pool: "pool1", Device: "device1", ShareID: ptr.To(types.UID(validUID1))},
+				),
+				tweakStatusDevices(
+					resource.AllocatedDeviceStatus{Driver: "driver1", Pool: "pool1", Device: "device1", ShareID: ptr.To(validUID1)},
+					resource.AllocatedDeviceStatus{Driver: "driver1", Pool: "pool1", Device: "device1", ShareID: ptr.To(validUID1)},
+				),
+			),
+			expectedErrs: field.ErrorList{
+				field.Duplicate(field.NewPath("status", "devices").Index(1), "driver1/pool1/device1"),
+			},
+		},
 	}
 	for k, tc := range testCases {
 		t.Run(k, func(t *testing.T) {
@@ -260,6 +323,21 @@ func TestValidateStatusUpdateForDeclarative(t *testing.T) {
 			tc.update.ObjectMeta.ResourceVersion = "1"
 			apitesting.VerifyUpdateValidationEquivalence(t, ctx, &tc.update, &tc.old, strategy.ValidateUpdate, tc.expectedErrs, "status")
 		})
+	}
+}
+
+func tweakStatusDevices(devices ...resource.AllocatedDeviceStatus) func(rc *resource.ResourceClaim) {
+	return func(rc *resource.ResourceClaim) {
+		rc.Status.Devices = devices
+	}
+}
+
+func tweakStatusAllocation(results ...resource.DeviceRequestAllocationResult) func(rc *resource.ResourceClaim) {
+	return func(rc *resource.ResourceClaim) {
+		if rc.Status.Allocation == nil {
+			rc.Status.Allocation = &resource.AllocationResult{}
+		}
+		rc.Status.Allocation.Devices.Results = append(rc.Status.Allocation.Devices.Results, results...)
 	}
 }
 

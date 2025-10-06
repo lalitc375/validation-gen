@@ -431,6 +431,10 @@ func Validate_ResourceClaimStatus(ctx context.Context, op operation.Operation, f
 			if e := validate.OptionalSlice(ctx, op, fldPath, obj, oldObj); len(e) != 0 {
 				return // do not proceed
 			}
+			// lists with map semantics require unique keys
+			errs = append(errs, validate.Unique(ctx, op, fldPath, obj, oldObj, func(a resourcev1beta2.AllocatedDeviceStatus, b resourcev1beta2.AllocatedDeviceStatus) bool {
+				return a.Driver == b.Driver && a.Device == b.Device && a.Pool == b.Pool && ((a.ShareID == nil && b.ShareID == nil) || (a.ShareID != nil && b.ShareID != nil && *a.ShareID == *b.ShareID))
+			})...)
 			return
 		}(fldPath.Child("devices"), obj.Devices, safe.Field(oldObj, func(oldObj *resourcev1beta2.ResourceClaimStatus) []resourcev1beta2.AllocatedDeviceStatus {
 			return oldObj.Devices
