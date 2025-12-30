@@ -95,4 +95,65 @@ func ValidateMyResourceSpec(spec *MyResourceSpec, fldPath *field.Path) field.Err
 }
 ```
 In this scenario, `+k8s:opaqueType` ensures that the `+k8s:required` tag on `ComplexConfig.ParameterA` is not enforced by generated code for `MyResourceSpec.CustomConfig`, allowing the handwritten `ValidateMyResourceSpec` function to define more nuanced or context-specific rules.
+
+## Test Coverage
+
+The `+k8s:opaqueType` tag is used to suppress declarative validation for a type. Testing for this tag involves demonstrating that fields of this type are not validated, even if they contain data that would otherwise be considered invalid.
+
+### Example
+
+Suppose you have a `RawExtension` type that should be treated as opaque, and it is used in a struct that also contains a validated field.
+
+**File:** `pkg/apis/example/v1/types.go`
+```go
+// +k8s:opaqueType
+type RawExtension struct {
+	// This struct can contain anything, and it won't be validated.
+	InnerField string `json:"innerField,omitempty"`
+}
+
+type MyStruct struct {
+    OpaqueData RawExtension `json:"opaqueData,omitempty"`
+    // +k8s:maxLength=5
+    ValidatedField string `json:"validatedField,omitempty"`
+}
 ```
+
+Your `declarative_validation_test.go` should show that validation is skipped for `OpaqueData` but still applied to `ValidatedField`.
+
+**File:** `pkg/apis/example/validation/declarative_validation_test.go`
+```go
+func TestDeclarativeValidateOpaque(t *testing.T) {
+    // ...
+    testCases := map[string]struct {
+        input        example.MyStruct
+        expectedErrs field.ErrorList
+    }{
+        "opaque field with invalid-looking data is ignored": {
+            input: mkMyStruct(func(obj *example.MyStruct) {
+                obj.OpaqueData = example.RawExtension{
+                    // If RawExtension were not opaque, this might be invalid
+                    InnerField: "some data that could be invalid under other rules",
+                }
+                obj.ValidatedField = "valid"
+            }),
+            expectedErrs: field.ErrorList{},
+        },
+        "validation error from non-opaque field is still reported": {
+            input: mkMyStruct(func(obj *example.MyStruct) {
+                obj.OpaqueData = example.RawExtension{}
+                // This field violates its maxLength rule.
+                obj.ValidatedField = "this is too long"
+            }),
+            expectedErrs: field.ErrorList{
+                field.TooLong(field.NewPath("spec", "validatedField"), "", 5).WithOrigin("maxLength"),
+            },
+        },
+    }
+    // ...
+}
+```
+
+In this example:
+1.  The first test case shows that no errors are produced for the `OpaqueData` field, demonstrating that it is not being validated.
+2.  The second test case confirms that validation rules on other fields (`ValidatedField`) are still enforced, proving that `+k8s:opaqueType` only affects the type it is applied to.

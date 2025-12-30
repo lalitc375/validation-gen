@@ -77,3 +77,61 @@ func someConditionMakesItRequired() bool {
 }
 ```
 The `+k8s:optional` tag clearly communicates that the field is not mandatory, simplifying API usage and reducing the need for explicit checks in validation code.
+
+## Test Coverage
+
+The `+k8s:optional` tag indicates that a field is not required, which is the default behavior for most fields. Its primary testing use case is to verify that it correctly overrides a `+k8s:required` tag on a type definition, making a specific field optional even when the underlying type is generally required.
+
+### Example: Overriding a Required Type
+
+Suppose you have a `RequiredString` type that must not be empty, but you want to make a specific field of this type optional.
+
+**File:** `pkg/apis/example/v1/types.go`
+```go
+// +k8s:required
+type RequiredString string
+
+type MyStruct struct {
+    // This field would be required by default due to the RequiredString type,
+    // but +k8s:optional overrides it.
+    // +k8s:optional
+    OptionalField RequiredString `json:"optionalField,omitempty"`
+
+    // This field remains required.
+    RequiredField RequiredString `json:"requiredField"`
+}
+```
+
+Your `declarative_validation_test.go` should verify that `OptionalField` can be empty, while `RequiredField` cannot.
+
+**File:** `pkg/apis/example/validation/declarative_validation_test.go`
+```go
+func TestDeclarativeValidateOptional(t *testing.T) {
+    // ...
+    testCases := map[string]struct {
+        input        example.MyStruct
+        expectedErrs field.ErrorList
+    }{
+        "optional field is omitted, required field is present": {
+            input: mkMyStruct(func(obj *example.MyStruct) {
+                obj.RequiredField = "I am required"
+            }),
+            expectedErrs: field.ErrorList{},
+        },
+        "required field is omitted": {
+            input: mkMyStruct(func(obj *example.MyStruct) {
+                // OptionalField is omitted, which is fine.
+                // RequiredField is omitted, which is an error.
+            }),
+            expectedErrs: field.ErrorList{
+                field.Required(field.NewPath("spec", "requiredField"), "").WithOrigin("required"),
+            },
+        },
+    }
+    // ...
+}
+```
+
+In this example:
+1.  The first test case shows that omitting `OptionalField` is valid as long as `RequiredField` is provided.
+2.  The second test case shows that omitting `RequiredField` results in a `field.Required` error, confirming that the `+k8s:required` tag on the type is still enforced for other fields.

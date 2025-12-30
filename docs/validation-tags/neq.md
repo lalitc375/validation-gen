@@ -96,3 +96,53 @@ func ValidateMyPodSpec(spec *MyPodSpec, fldPath *field.Path) field.ErrorList {
 }
 ```
 Using `+k8s:neq` makes the explicit exclusion of values a declarative part of the API definition.
+
+## Test Coverage
+
+When using `+k8s:neq`, you should add declarative validation tests to verify that the field is rejected when it is set to the forbidden value.
+
+### Example
+
+Suppose you have a `tag` field that cannot be set to the value "Forbidden".
+
+**File:** `pkg/apis/example/v1/types.go`
+```go
+type MyStruct struct {
+    // +k8s:neq=Forbidden
+    Tag string `json:"tag,omitempty"`
+}
+```
+
+Your `declarative_validation_test.go` should include test cases for both allowed and disallowed values.
+
+**File:** `pkg/apis/example/validation/declarative_validation_test.go`
+```go
+func TestDeclarativeValidateNeq(t *testing.T) {
+    // ...
+    testCases := map[string]struct {
+        input        example.MyStruct
+        expectedErrs field.ErrorList
+    }{
+        "allowed tag value": {
+            input: mkMyStruct(func(obj *example.MyStruct) {
+                obj.Tag = "AllowedValue"
+            }),
+            expectedErrs: field.ErrorList{},
+        },
+        "disallowed tag value": {
+            input: mkMyStruct(func(obj *example.MyStruct) {
+                obj.Tag = "Forbidden"
+            }),
+            expectedErrs: field.ErrorList{
+                field.Invalid(field.NewPath("spec", "tag"), "Forbidden", "must not be equal to Forbidden").WithOrigin("neq"),
+            },
+        },
+    }
+    // ...
+}
+```
+
+In this example:
+1.  We test an allowed value, which should pass validation.
+2.  We test the disallowed value "Forbidden" and expect a `field.Invalid` error. The error message clearly indicates that the value is not allowed.
+3.  The error origin is `neq`, corresponding to the `+k8s:neq` tag.

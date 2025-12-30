@@ -65,6 +65,7 @@ type ConfigMap struct {
 In the corresponding handwritten validation function for `ConfigMap` objects, remove or mark as covered the explicit checks for the map's size.
 
 **File:** `pkg/apis/core/validation/validation.go`
+
 ```go
 func ValidateConfigMap(configMap *core.ConfigMap, fldPath *field.Path) field.ErrorList {
     allErrs := field.ErrorList{}
@@ -87,3 +88,59 @@ func ValidateConfigMap(configMap *core.ConfigMap, fldPath *field.Path) field.Err
 }
 ```
 By using `+k8s:maxProperties`, the API server automatically enforces the maximum number of entries in the `Data` map, simplifying validation logic.
+
+## Test Coverage
+
+When using `+k8s:maxProperties`, you should add declarative validation tests to verify that maps with more than the specified number of properties are rejected.
+
+### Example
+
+Suppose you have a map that can contain at most 2 properties.
+
+**File:** `pkg/apis/example/v1/types.go`
+```go
+type MyStruct struct {
+    // +k8s:maxProperties=2
+    Labels map[string]string `json:"labels,omitempty"`
+}
+```
+
+Your `declarative_validation_test.go` should include test cases to cover maps that are within the limit, at the limit, and over the limit.
+
+**File:** `pkg/apis/example/validation/declarative_validation_test.go`
+```go
+func TestDeclarativeValidateMaxProperties(t *testing.T) {
+    // ...
+    testCases := map[string]struct {
+        input        example.MyStruct
+        expectedErrs field.ErrorList
+    }{
+        "map with fewer than max properties": {
+            input: mkMyStruct(func(obj *example.MyStruct) {
+                obj.Labels = map[string]string{"key1": "value1"}
+            }),
+            expectedErrs: field.ErrorList{},
+        },
+        "map with exactly max properties": {
+            input: mkMyStruct(func(obj *example.MyStruct) {
+                obj.Labels = map[string]string{"key1": "value1", "key2": "value2"}
+            }),
+            expectedErrs: field.ErrorList{},
+        },
+        "map with more than max properties": {
+            input: mkMyStruct(func(obj *example.MyStruct) {
+                obj.Labels = map[string]string{"key1": "value1", "key2": "value2", "key3": "value3"}
+            }),
+            expectedErrs: field.ErrorList{
+                field.TooMany(field.NewPath("spec", "labels"), 3, 2).WithOrigin("maxProperties"),
+            },
+        },
+    }
+    // ...
+}
+```
+
+In this example:
+1.  We test three scenarios for the number of properties relative to `maxProperties`.
+2.  For the case that exceeds the limit, we expect a `field.TooMany` error, which clearly states the actual and maximum allowed number of properties.
+3.  The error origin is `maxProperties`, corresponding to the `+k8s:maxProperties` tag.

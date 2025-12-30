@@ -86,3 +86,59 @@ func ValidateReplicaSetSpec(spec *apps.ReplicaSetSpec, fldPath *field.Path, opts
 }
 ```
 This ensures that the declarative validation tooling can verify the `minimum` constraint while maintaining compatibility with the existing handwritten validation.
+
+## Test Coverage
+
+When using `+k8s:minimum`, you should add declarative validation tests to verify that values smaller than the specified minimum are rejected.
+
+### Example
+
+Suppose you have a field for `replicas` that must be at least 1.
+
+**File:** `pkg/apis/example/v1/types.go`
+```go
+type MyStruct struct {
+    // +k8s:minimum=1
+    Replicas int32 `json:"replicas,omitempty"`
+}
+```
+
+Your `declarative_validation_test.go` should include test cases for values that are less than, equal to, and greater than the minimum.
+
+**File:** `pkg/apis/example/validation/declarative_validation_test.go`
+```go
+func TestDeclarativeValidateMinimum(t *testing.T) {
+    // ...
+    testCases := map[string]struct {
+        input        example.MyStruct
+        expectedErrs field.ErrorList
+    }{
+        "value greater than minimum": {
+            input: mkMyStruct(func(obj *example.MyStruct) {
+                obj.Replicas = 5
+            }),
+            expectedErrs: field.ErrorList{},
+        },
+        "value equal to minimum": {
+            input: mkMyStruct(func(obj *example.MyStruct) {
+                obj.Replicas = 1
+            }),
+            expectedErrs: field.ErrorList{},
+        },
+        "value less than minimum": {
+            input: mkMyStruct(func(obj *example.MyStruct) {
+                obj.Replicas = 0
+            }),
+            expectedErrs: field.ErrorList{
+                field.Invalid(field.NewPath("spec", "replicas"), 0, "must be greater than or equal to 1").WithOrigin("minimum"),
+            },
+        },
+    }
+    // ...
+}
+```
+
+In this example:
+1.  We test values that are greater than, equal to, and less than the specified `minimum`.
+2.  For the value that is less than the minimum, we expect a `field.Invalid` error. The error message typically includes a description of the valid range.
+3.  The error origin is `minimum`, corresponding to the `+k8s:minimum` tag.
