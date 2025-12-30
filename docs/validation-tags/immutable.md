@@ -82,3 +82,72 @@ func ValidateResourceClaimUpdate(newClaim, oldClaim *resource.ResourceClaim) fie
 }
 ```
 By using `+k8s:immutable`, the API server automatically rejects any attempts to modify the `Spec` field after the initial creation, enforcing the immutability rule declaratively.
+
+## Test Coverage
+
+When using `+k8s:immutable`, you should add declarative validation tests to verify that the field cannot be changed after the object has been created.
+
+### Example
+
+Suppose you have a `storageClassName` field that should be immutable:
+
+**File:** `pkg/apis/example/v1/types.go`
+```go
+type MyResourceSpec struct {
+    // +k8s:immutable
+    StorageClassName string `json:"storageClassName,omitempty"`
+}
+```
+
+Your `declarative_validation_test.go` should include a test case that attempts to update this field and expects an error.
+
+**File:** `pkg/apis/example/validation/declarative_validation_test.go` (hypothetical example)
+```go
+func TestDeclarativeValidateImmutable(t *testing.T) {
+    oldObj := &example.MyResource{
+        Spec: example.MyResourceSpec{
+            StorageClassName: "old-class",
+        },
+    }
+    
+    testCases := map[string]struct {
+        update       example.MyResource
+        expectedErrs field.ErrorList
+    }{
+        "immutable field not changed": {
+            update: example.MyResource{
+                Spec: example.MyResourceSpec{
+                    StorageClassName: "old-class",
+                },
+            },
+            expectedErrs: field.ErrorList{},
+        },
+        "immutable field changed": {
+            update: example.MyResource{
+                Spec: example.MyResourceSpec{
+                    StorageClassName: "new-class",
+                },
+            },
+            expectedErrs: field.ErrorList{
+                field.Invalid(
+                    field.NewPath("spec", "storageClassName"),
+                    "new-class",
+                    "field is immutable",
+                ),
+            },
+        },
+    }
+
+    for name, tc := range testCases {
+        t.Run(name, func(t *testing.T){
+            // Use VerifyUpdateValidationEquivalence for update tests
+            apitesting.VerifyUpdateValidationEquivalence(t, context.TODO(), &tc.update, oldObj, Strategy.ValidateUpdate, tc.expectedErrs)
+        })
+    }
+}
+```
+
+In this example:
+1.  We test an update where the immutable field `storageClassName` is not changed, which should pass.
+2.  We test an update where `storageClassName` is changed, and we expect a `field.Invalid` error with the message "field is immutable".
+3.  We use `apitesting.VerifyUpdateValidationEquivalence` to simulate an object update.

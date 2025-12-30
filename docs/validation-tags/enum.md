@@ -114,3 +114,63 @@ func validateTaint(taint *core.Taint, fldPath *field.Path) field.ErrorList {
 ```
 
 By following this pattern, you ensure that the declarative validation is correctly implemented and can be verified by the validation tooling, while maintaining compatibility with existing handwritten checks during the transition period.
+
+## Test Coverage
+
+When using `+k8s:enum`, you should add declarative validation tests to verify that only the defined constant values are accepted.
+
+### Example
+
+Suppose you have a `TaintEffect` enum defined as follows:
+
+**File:** `staging/src/k8s.io/api/core/v1/types.go`
+```go
+// +k8s:enum
+type TaintEffect string
+
+const (
+	TaintEffectNoSchedule TaintEffect = "NoSchedule"
+	TaintEffectNoExecute  TaintEffect = "NoExecute"
+)
+```
+
+Your `declarative_validation_test.go` should include test cases for both valid and invalid enum values.
+
+**File:** `pkg/apis/core/validation/declarative_validation_test.go` (hypothetical example)
+```go
+func TestDeclarativeValidateTaint(t *testing.T) {
+    // ...
+    testCases := map[string]struct {
+        input        core.Taint
+        expectedErrs field.ErrorList
+    }{
+        "valid taint effect": {
+            input: core.Taint{
+                Key: "key",
+                Effect: core.TaintEffectNoSchedule,
+            },
+            expectedErrs: field.ErrorList{},
+        },
+        "invalid taint effect": {
+            input: core.Taint{
+                Key: "key",
+                Effect: "InvalidEffect",
+            },
+            expectedErrs: field.ErrorList{
+                field.NotSupported(
+                    field.NewPath("effect"),
+                    "InvalidEffect",
+                    []string{"NoExecute", "NoSchedule"},
+                ).MarkCoveredByDeclarative(), // Assuming there is also handwritten validation
+            },
+        },
+    }
+    // ...
+}
+```
+
+In this example:
+1.  We test both a valid enum value (`TaintEffectNoSchedule`) and an invalid one (`"InvalidEffect"`).
+2.  For the invalid case, we expect a `field.NotSupported` error, which lists the allowed values.
+3.  The error can be marked with `.MarkCoveredByDeclarative()` if there is also a handwritten validation for the same field. If the validation is purely declarative, you would use `.MarkDeclarativeNative()` instead.
+

@@ -164,3 +164,62 @@ func TestValidateStatusUpdateForDeclarative(t *testing.T) {
     // ... run tests using VerifyUpdateValidationEquivalence ...
 }
 ```
+
+## Test Coverage
+
+When using `+k8s:format`, you should add declarative validation tests to verify that the string field conforms to the specified format.
+
+### Example
+
+Suppose you have a field that must be a valid DNS-1123 subdomain:
+
+**File:** `pkg/apis/example/v1/types.go`
+```go
+type MyResourceSpec struct {
+    // Validates that the field is a DNS-1123 subdomain.
+    // +k8s:format=k8s-dns-1123
+    Subdomain string `json:"subdomain,omitempty"`
+}
+```
+
+Your `declarative_validation_test.go` should include test cases for both valid and invalid formats.
+
+**File:** `pkg/apis/example/validation/declarative_validation_test.go` (hypothetical example)
+```go
+func TestDeclarativeValidateFormat(t *testing.T) {
+    // ...
+    testCases := map[string]struct {
+        input        example.MyResource
+        expectedErrs field.ErrorList
+    }{
+        "valid subdomain": {
+            input: example.MyResource{
+                Spec: example.MyResourceSpec{
+                    Subdomain: "my-valid-subdomain",
+                },
+            },
+            expectedErrs: field.ErrorList{},
+        },
+        "invalid subdomain": {
+            input: example.MyResource{
+                Spec: example.MyResourceSpec{
+                    Subdomain: "Invalid_Subdomain!",
+                },
+            },
+            expectedErrs: field.ErrorList{
+                field.Invalid(
+                    field.NewPath("spec", "subdomain"),
+                    "Invalid_Subdomain!",
+                    "a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')",
+                ),
+            },
+        },
+    }
+    // ...
+}
+```
+
+In this example:
+1.  We test a valid DNS-1123 subdomain, which should pass.
+2.  We test an invalid subdomain and expect a `field.Invalid` error. The error message provides details about the expected format.
+3.  The error does not need to be marked with `.MarkCoveredByDeclarative()` unless you are migrating from handwritten validation that performs the same check. If this is a new validation, it is purely declarative.

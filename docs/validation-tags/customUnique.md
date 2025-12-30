@@ -86,3 +86,39 @@ func validateConditions(fldPath *field.Path, csr *certificates.CertificateSignin
 }
 ```
 In this example, the `+k8s:customUnique` tag ensures that the generated code skips uniqueness validation for the `Conditions` field, allowing the `validateConditions` function to manage it entirely.
+
+## Test Coverage
+
+Since `+k8s:customUnique` disables generated uniqueness validation in favor of handwritten logic, declarative validation tests should not expect uniqueness errors with an origin like `unique` or `duplicate`. Instead, the responsibility for testing uniqueness lies with the tests for the handwritten validation logic.
+
+However, it is still important to have declarative validation tests for the field to cover any other validation tags. For example, if a field with `+k8s:customUnique` also uses `+k8s:item`, the declarative validation tests should cover the `+k8s:item` validation.
+
+### Example
+
+In the case of `CertificateSigningRequestStatus.Conditions`, which uses `+k8s:customUnique`, the declarative validation tests in `pkg/registry/certificates/certificates/declarative_validation_test.go` focus on the `+k8s:zeroOrOneOfMember` validation applied with `+k8s:item`, not on uniqueness.
+
+A test case might look like this:
+
+```go
+testCases := map[string]struct {
+    input        api.CertificateSigningRequest
+    expectedErrs field.ErrorList
+}{
+    "status.conditions: Approved+Denied = invalid": {
+        input: makeValidCSR(withApprovedCondition(), withDeniedCondition()),
+        expectedErrs: field.ErrorList{
+            field.Invalid(field.NewPath("status", "conditions"), nil, "").WithOrigin("zeroOrOneOf"),
+        },
+    },
+}
+```
+
+This test verifies the `zeroOrOneOfMember` constraint, while the uniqueness of conditions is tested separately in the handwritten validation tests. Additionally, a "ratcheting" test case can be added to ensure that existing objects with duplicate items are not invalidated on update.
+
+```go
+"ratcheting: allow existing duplicate types - valid": {
+    old:          makeValidCSR(withApprovedCondition(), withApprovedCondition(), withDeniedCondition(), withDeniedCondition()),
+    update:       makeValidCSR(withDeniedCondition(), withDeniedCondition(), withApprovedCondition(), withApprovedCondition()),
+    subresources: []string{"/status"},
+},
+```

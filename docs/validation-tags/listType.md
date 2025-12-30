@@ -59,7 +59,7 @@ Apply `+k8s:listType=map` and `+k8s:listMapKey=name` to the `Containers` field i
 
 **File:** `staging/src/k8s.io/api/core/v1/types.go`
 ```go
-type PodSpec struct {
+type PodSpec {
     // ...
     // List of containers belonging to the pod.
     // +patchMergeKey=name
@@ -102,3 +102,65 @@ func ValidatePodSpec(spec *core.PodSpec, fldPath *field.Path, opts PodValidation
 }
 ```
 By declaring `+k8s:listType=map` and `+k8s:listMapKey=name`, the API machinery correctly handles merging `Containers` by their `name` field during updates and automatically enforces uniqueness of container names within the list.
+
+## Test Coverage
+
+The `+k8s:listType` tag provides structural information to the API server and validation system. It does not have a direct validation rule to test but is essential for the correct behavior of other validations on lists. Its correctness is demonstrated through the tests for tags like `+k8s:listMapKey`, `+k8s:item`, and `+k8s:unique`.
+
+### Example: Testing a `listType=map`
+
+When you set `listType=map`, you typically also provide one or more `+k8s:listMapKey` tags. You can then test validations that depend on this map-like behavior, such as uniqueness checks.
+
+Suppose you have a list of environment variables where each variable must have a unique `name`.
+
+**File:** `pkg/apis/example/v1/types.go`
+```go
+type EnvVar struct {
+    Name  string `json:"name"`
+    Value string `json:"value"`
+}
+
+type MyContainer struct {
+    // +k8s:listType=map
+    // +k8s:listMapKey=name
+    // +k8s:unique
+    Env []EnvVar `json:"env"`
+}
+```
+
+Your `declarative_validation_test.go` should verify that duplicate `name` entries are rejected, which implicitly tests that `listType=map` and `listMapKey` are working correctly.
+
+**File:** `pkg/apis/example/validation/declarative_validation_test.go` (hypothetical example)
+```go
+func TestDeclarativeValidateListType(t *testing.T) {
+    // ...
+    testCases := map[string]struct {
+        input        example.MyContainer
+        expectedErrs field.ErrorList
+    }{
+        "unique env var names": {
+            input: example.MyContainer{
+                Env: []example.EnvVar{
+                    {Name: "VAR_A", Value: "value_a"},
+                    {Name: "VAR_B", Value: "value_b"},
+                },
+            },
+            expectedErrs: field.ErrorList{},
+        },
+        "duplicate env var names": {
+            input: example.MyContainer{
+                Env: []example.EnvVar{
+                    {Name: "VAR_A", Value: "value_a"},
+                    {Name: "VAR_A", Value: "another_value"},
+                },
+            },
+            expectedErrs: field.ErrorList{
+                field.Duplicate(field.NewPath("spec", "env").Key("VAR_A"), "VAR_A"),
+            },
+        },
+    }
+    // ...
+}
+```
+
+In this example, the test for `+k8s:unique` on the `Env` list relies on the list being treated as a map with `name` as the key. The successful validation of uniqueness indirectly confirms that `listType=map` and `listMapKey=name` are correctly interpreted by the validation system.

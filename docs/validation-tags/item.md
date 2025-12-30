@@ -82,3 +82,83 @@ func validateConditions(fldPath *field.Path, csr *certificates.CertificateSignin
 }
 ```
 The `+k8s:item` tag allows for more concise and explicit definitions of validation rules for specific elements within a list, reducing the complexity of handwritten validation code.
+
+## Test Coverage
+
+When using `+k8s:item`, your declarative validation tests should verify that the specified validation rule is correctly applied only to the items that match the given key-value pair.
+
+### Example
+
+Suppose you have a list of conditions where the `message` for the "Ready" type condition must have a maximum length of 10 characters.
+
+**File:** `pkg/apis/example/v1/types.go`
+```go
+type Condition struct {
+    // type of condition in CamelCase.
+    Type string `json:"type" protobuf:"bytes,1,name=type"`
+    // human-readable message indicating details about last transition.
+    Message string `json:"message,omitempty" protobuf:"bytes,4,opt,name=message"`
+}
+
+type MyResourceStatus struct {
+    // +k8s:listType=map
+    // +k8s:listMapKey=type
+    // +k8s:item(type=Ready)=+k8s:subfield(message)=+k8s:maxLength=10
+    Conditions []Condition `json:"conditions,omitempty"`
+}
+```
+
+Your `declarative_validation_test.go` should include tests to verify this conditional validation.
+
+**File:** `pkg/apis/example/validation/declarative_validation_test.go` (hypothetical example)
+```go
+func TestDeclarativeValidateItem(t *testing.T) {
+    // ...
+    testCases := map[string]struct {
+        input        example.MyResource
+        expectedErrs field.ErrorList
+    }{
+        "valid Ready condition message length": {
+            input: example.MyResource{
+                Status: example.MyResourceStatus{
+                    Conditions: []example.Condition{
+                        {Type: "Ready", Message: "short"},
+                    },
+                },
+            },
+            expectedErrs: field.ErrorList{},
+        },
+        "invalid Ready condition message length": {
+            input: example.MyResource{
+                Status: example.MyResourceStatus{
+                    Conditions: []example.Condition{
+                        {Type: "Ready", Message: "this message is too long"},
+                    },
+                },
+            },
+            expectedErrs: field.ErrorList{
+                field.TooLong(
+                    field.NewPath("status", "conditions").Key("Ready").Child("message"),
+                    "", 10,
+                ).WithOrigin("maxLength"),
+            },
+        },
+        "other condition type with long message is valid": {
+            input: example.MyResource{
+                Status: example.MyResourceStatus{
+                    Conditions: []example.Condition{
+                        {Type: "Progressing", Message: "this message is allowed to be long"},
+                    },
+                },
+            },
+            expectedErrs: field.ErrorList{},
+        },
+    }
+    // ...
+}
+```
+
+In this example:
+1.  We test that a `Ready` condition with a short message is valid.
+2.  We test that a `Ready` condition with a message exceeding the `maxLength` of 10 fails validation. Note that for `listType=map`, the path to the item is constructed using `.Key()` with the value of the `listMapKey` field (`type` in this case).
+3.  We test that a condition of a different type (`Progressing`) is not affected by the `+k8s:item(type=Ready)` validation and can have a long message.

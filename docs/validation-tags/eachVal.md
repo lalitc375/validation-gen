@@ -96,3 +96,76 @@ func validateServicePort(sp *core.ServicePort, requireName, isHeadlessService bo
 }
 ```
 By marking these specific errors as covered, the system can rely on the declarative tags for port range validation while still executing other handwritten checks.
+
+## Test Coverage
+
+When using `+k8s:eachVal`, you should add declarative validation tests to verify that the validation is correctly applied to each value of the slice or map.
+
+### Example: Slice Validation
+
+Suppose you have a slice of strings where each string must have a maximum length of 5 characters.
+
+**File:** `pkg/apis/example/v1/types.go`
+```go
+type MyStruct struct {
+    // Validates that each string in the slice has a max length of 5
+    // +k8s:eachVal=+k8s:maxLength=5
+    Values []string `json:"values,omitempty"`
+}
+```
+
+Your `declarative_validation_test.go` should include test cases for values with lengths less than, equal to, and greater than the maximum.
+
+**File:** `pkg/apis/example/validation/declarative_validation_test.go`
+```go
+func TestDeclarativeValidate(t *testing.T) {
+    // ...
+    testCases := map[string]struct {
+        input        example.MyStruct
+        expectedErrs field.ErrorList
+    }{
+        "valid slice values": {
+            input: mkMyStruct(func(obj *example.MyStruct) {
+                obj.Values = []string{"short", "tiny"}
+            }),
+            expectedErrs: field.ErrorList{},
+        },
+        "slice value length equal to max": {
+            input: mkMyStruct(func(obj *example.MyStruct) {
+                obj.Values = []string{"exact"}
+            }),
+            expectedErrs: field.ErrorList{},
+        },
+        "slice value length too long": {
+            input: mkMyStruct(func(obj *example.MyStruct) {
+                obj.Values = []string{"this-is-too-long"}
+            }),
+            expectedErrs: field.ErrorList{
+                field.TooLong(field.NewPath("spec", "values").Index(0), "", 5).WithOrigin("maxLength"),
+            },
+        },
+        "multiple invalid slice values": {
+            input: mkMyStruct(func(obj *example.MyStruct) {
+                obj.Values = []string{"short", "this-is-too-long", "also-too-long"}
+            }),
+            expectedErrs: field.ErrorList{
+                field.TooLong(field.NewPath("spec", "values").Index(1), "", 5).WithOrigin("maxLength"),
+                field.TooLong(field.NewPath("spec", "values").Index(2), "", 5).WithOrigin("maxLength"),
+            },
+        },
+    }
+    // ...
+    for k, tc := range testCases {
+        t.Run(k, func(t *testing.T) {
+            apitesting.VerifyValidationEquivalence(t, ctx, &tc.input, Strategy.Validate, tc.expectedErrs)
+        })
+    }
+}
+```
+
+In this example:
+1.  We test multiple scenarios, including multiple invalid values in the same slice.
+2.  For invalid items, we expect a `field.TooLong` error.
+3.  The `field.Path` for a slice item is constructed using `.Index()`.
+4.  The error origin is `maxLength`, corresponding to the `+k8s:maxLength` tag applied by `+k8s:eachVal`.
+

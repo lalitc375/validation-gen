@@ -57,3 +57,65 @@ const (
 
 ### 2. Generated Validation Behavior
 When validation code is generated, any field using `ConnectionState` will accept "Connected" and "Disconnected", but will reject "InternalOnly". Previously, you would have needed explicit handwritten checks to filter out "InternalOnly".
+
+## Test Coverage
+
+When using `+k8s:enumExclude`, you should add declarative validation tests to verify that the excluded constant is not accepted as a valid value.
+
+### Example
+
+Given the following enum definition where `ProtocolSCTP` is excluded:
+
+**File:** `pkg/apis/example/v1/types.go`
+```go
+// +k8s:enum
+type Protocol string
+
+const (
+    ProtocolTCP  Protocol = "TCP"
+    ProtocolUDP  Protocol = "UDP"
+    // +k8s:enumExclude
+    ProtocolSCTP Protocol = "SCTP" // SCTP is not a supported protocol in this API
+)
+
+type MyResource struct {
+    Protocol Protocol `json:"protocol"`
+}
+```
+
+Your `declarative_validation_test.go` should include test cases to confirm that `SCTP` is rejected.
+
+**File:** `pkg/apis/example/validation/declarative_validation_test.go` (hypothetical example)
+```go
+func TestDeclarativeValidateProtocol(t *testing.T) {
+    // ...
+    testCases := map[string]struct {
+        input        example.MyResource
+        expectedErrs field.ErrorList
+    }{
+        "valid protocol": {
+            input: example.MyResource{
+                Protocol: example.ProtocolTCP,
+            },
+            expectedErrs: field.ErrorList{},
+        },
+        "excluded protocol": {
+            input: example.MyResource{
+                Protocol: example.ProtocolSCTP,
+            },
+            expectedErrs: field.ErrorList{
+                field.NotSupported(
+                    field.NewPath("spec", "protocol"),
+                    "SCTP",
+                    []string{"TCP", "UDP"},
+                ),
+            },
+        },
+    }
+    // ...
+}
+```
+
+In this example:
+1.  We test a valid enum value (`ProtocolTCP`) which should pass.
+2.  We test the excluded value (`ProtocolSCTP`) and expect a `field.NotSupported` error. The list of supported values in the error message correctly omits `SCTP`.

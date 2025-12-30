@@ -15,14 +15,61 @@ Any Go type. The tag indicates that the field itself should not be present, rega
 ## Usage
 
 ### Field
+## Test Coverage
+
+When using `+k8s:forbidden`, you should add declarative validation tests to verify that an error is returned when the forbidden field is set.
+
+### Example
+
+Given the following struct where `badField` is forbidden:
+
+**File:** `pkg/apis/example/v1/types.go`
 ```go
-type Status struct {
+type MyResourceSpec struct {
+    // badField is not allowed to be set.
     // +k8s:forbidden
-    // This field is deprecated and should not be used.
-    LegacyStatus string `json:"legacyStatus,omitempty"`
+    BadField string `json:"badField,omitempty"`
+
+    GoodField string `json:"goodField,omitempty"`
 }
 ```
-If a user attempts to set `LegacyStatus` in the YAML/JSON for `Status`, validation will fail.
+
+Your `declarative_validation_test.go` should include a test case that fails when `badField` is set.
+
+**File:** `pkg/apis/example/validation/declarative_validation_test.go` (hypothetical example)
+```go
+func TestDeclarativeValidateForbidden(t *testing.T) {
+    // ...
+    testCases := map[string]struct {
+        input        example.MyResource
+        expectedErrs field.ErrorList
+    }{
+        "forbidden field is not set": {
+            input: example.MyResource{
+                Spec: example.MyResourceSpec{
+                    GoodField: "allowed",
+                },
+            },
+            expectedErrs: field.ErrorList{},
+        },
+        "forbidden field is set": {
+            input: example.MyResource{
+                Spec: example.MyResourceSpec{
+                    BadField: "this is not allowed",
+                },
+            },
+            expectedErrs: field.ErrorList{
+                field.Forbidden(field.NewPath("spec", "badField"), "field is forbidden"),
+            },
+        },
+    }
+    // ...
+}
+```
+
+In this example:
+1.  We test the valid case where the forbidden field is not set.
+2.  We test the invalid case where the forbidden field is set and expect a `field.Forbidden` error. The error message "field is forbidden" is a generic message provided by the validation framework for this tag.
 
 ## Migrating from Handwritten Validation
 

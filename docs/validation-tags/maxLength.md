@@ -92,3 +92,59 @@ func ValidateObjectMeta(meta *metav1.ObjectMeta, requiresNamespace bool, nameFn 
 }
 ```
 This ensures that the declarative validation tooling can verify the `maxLength` constraint while maintaining compatibility with the existing handwritten validation.
+
+## Test Coverage
+
+When using `+k8s:maxLength`, you should add declarative validation tests to verify that strings longer than the specified length are rejected.
+
+### Example
+
+Suppose you have a string field that can be at most 10 characters long.
+
+**File:** `pkg/apis/example/v1/types.go`
+```go
+type MyStruct struct {
+    // +k8s:maxLength=10
+    LimitedString string `json:"limitedString,omitempty"`
+}
+```
+
+Your `declarative_validation_test.go` should include test cases for strings of various lengths.
+
+**File:** `pkg/apis/example/validation/declarative_validation_test.go`
+```go
+func TestDeclarativeValidateMaxLength(t *testing.T) {
+    // ...
+    testCases := map[string]struct {
+        input        example.MyStruct
+        expectedErrs field.ErrorList
+    }{
+        "string shorter than max length": {
+            input: mkMyStruct(func(obj *example.MyStruct) {
+                obj.LimitedString = "short"
+            }),
+            expectedErrs: field.ErrorList{},
+        },
+        "string at max length": {
+            input: mkMyStruct(func(obj *example.MyStruct) {
+                obj.LimitedString = "exactly-10"
+            }),
+            expectedErrs: field.ErrorList{},
+        },
+        "string longer than max length": {
+            input: mkMyStruct(func(obj *example.MyStruct) {
+                obj.LimitedString = "this-string-is-too-long"
+            }),
+            expectedErrs: field.ErrorList{
+                field.TooLong(field.NewPath("spec", "limitedString"), "", 10).WithOrigin("maxLength"),
+            },
+        },
+    }
+    // ...
+}
+```
+
+In this example:
+1.  We test strings that are shorter than, equal to, and longer than the `maxLength`.
+2.  For the string that exceeds the limit, we expect a `field.TooLong` error.
+3.  The error origin is `maxLength`, corresponding to the `+k8s:maxLength` tag.

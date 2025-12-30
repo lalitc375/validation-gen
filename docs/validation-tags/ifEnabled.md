@@ -88,3 +88,79 @@ func ValidateMyResourceSpec(spec *MyResourceSpec, fldPath *field.Path) field.Err
 ```
 The `+k8s:ifEnabled` tag makes the conditional requirement explicit in the API definition, reducing the need for imperative checks in handwritten code.
 
+## Test Coverage
+
+When using `+k8s:ifEnabled`, your declarative validation tests should cover both scenarios: when the specified feature gate is enabled and when it is disabled. This ensures that the conditional validation is applied correctly in both cases.
+
+To control feature gates within a test, you can use the `featuregatetesting.SetFeatureGateDuringTest` helper function.
+
+### Example: Conditional Enum Inclusion
+
+Suppose you have an `AlphaValue` that is only a valid enum value when the `AlphaFeature` feature gate is enabled. By default, it is excluded.
+
+**File:** `pkg/apis/example/v1/types.go`
+```go
+// +k8s:enum
+// +k8s:ifEnabled(AlphaFeature)=+k8s:enumExclude=false // Re-include AlphaValue if feature is on
+type FeatureEnum string
+
+const (
+    DefaultValue FeatureEnum = "Default"
+    // +k8s:enumExclude // Excluded by default
+    AlphaValue   FeatureEnum = "Alpha"
+)
+
+type MyResource struct {
+    Feature FeatureEnum `json:"feature"`
+}
+```
+
+Your `declarative_validation_test.go` should include tests for both states of the `AlphaFeature` feature gate.
+
+**File:** `pkg/apis/example/validation/declarative_validation_test.go` (hypothetical example)
+```go
+import (
+    "testing"
+    "k8s.io/apimachinery/pkg/util/validation/field"
+    "k8s.io/apiserver/pkg/features"
+    utilfeature "k8s.io/apiserver/pkg/util/feature"
+    featuregatetesting "k8s.io/component-base/featuregate/testing"
+    "..." // other imports
+)
+
+func TestDeclarativeValidateConditionalEnum(t *testing.T) {
+    //
+    // Scenario 1: AlphaFeature feature gate is ENABLED
+    //
+    t.Run("AlphaFeature=true", func(t *testing.T) {
+        featuregatetesting.SetFeatureGateDuringTest(t, utilfeature.DefaultFeatureGate, features.AlphaFeature, true)
+
+        // Test that "Alpha" is an allowed value
+        validObj := &example.MyResource{Feature: example.AlphaValue}
+        if errs := validateObject(validObj); len(errs) > 0 {
+            t.Errorf("expected no errors, but got: %v", errs)
+        }
+    })
+
+    //
+    // Scenario 2: AlphaFeature feature gate is DISABLED
+    //
+    t.Run("AlphaFeature=false", func(t *testing.T) {
+        featuregatetesting.SetFeatureGateDuringTest(t, utilfeature.DefaultFeatureGate, features.AlphaFeature, false)
+
+        // Test that "Alpha" is now a forbidden value
+        invalidObj := &example.MyResource{Feature: example.AlphaValue}
+        expectedErrs := field.ErrorList{
+            field.NotSupported(field.NewPath("spec", "feature"), "Alpha", []string{"Default"}),
+        }
+        if errs := validateObject(invalidObj); !reflect.DeepEqual(errs, expectedErrs) {
+            t.Errorf("expected errors %v, but got: %v", expectedErrs, errs)
+        }
+    })
+}
+```
+
+In this example:
+1.  We use `+k8s:enumExclude` to make `AlphaValue` invalid by default.
+2.  We use `+k8s:ifEnabled(AlphaFeature)=+k8s:enumExclude=false` on the type to re-include `AlphaValue` when the `AlphaFeature` gate is enabled.
+3.  The tests verify this behavior by enabling and disabling the feature gate.

@@ -107,3 +107,67 @@ func ValidatePodSpec(spec *core.PodSpec, fldPath *field.Path, opts PodValidation
 }
 ```
 By declaring `+k8s:listMapKey=name`, the API machinery correctly handles merging `Containers` by their `name` field during updates and automatically enforces uniqueness of container names within the list.
+
+## Test Coverage
+
+The `+k8s:listMapKey` tag is a structural hint to the validation system and does not, by itself, enforce a validation rule. Its correctness is tested indirectly through other validation tags that rely on it, such as `+k8s:item` and `+k8s:unique`.
+
+### Example: Testing Uniqueness of `listMapKey`
+
+A common use case for `listMapKey` is to enforce that all items in a list have a unique value for the specified key field(s). This is achieved by combining `+k8s:listType=map` and `+k8s:listMapKey` with `+k8s:unique`.
+
+Suppose you have a list of containers where each container must have a unique name.
+
+**File:** `pkg/apis/example/v1/types.go`
+```go
+type Container struct {
+    Name string `json:"name"`
+    Image string `json:"image"`
+}
+
+type MyPodSpec struct {
+    // +k8s:listType=map
+    // +k8s:listMapKey=name
+    // +k8s:unique
+    Containers []Container `json:"containers"`
+}
+```
+
+Your `declarative_validation_test.go` should include test cases to verify that duplicate names are rejected.
+
+**File:** `pkg/apis/example/validation/declarative_validation_test.go` (hypothetical example)
+```go
+func TestDeclarativeValidateListMapKey(t *testing.T) {
+    // ...
+    testCases := map[string]struct {
+        input        example.MyPodSpec
+        expectedErrs field.ErrorList
+    }{
+        "unique container names": {
+            input: example.MyPodSpec{
+                Containers: []example.Container{
+                    {Name: "container-a", Image: "image-a"},
+                    {Name: "container-b", Image: "image-b"},
+                },
+            },
+            expectedErrs: field.ErrorList{},
+        },
+        "duplicate container names": {
+            input: example.MyPodSpec{
+                Containers: []example.Container{
+                    {Name: "container-a", Image: "image-a"},
+                    {Name: "container-a", Image: "image-b"},
+                },
+            },
+            expectedErrs: field.ErrorList{
+                field.Duplicate(field.NewPath("spec", "containers").Key("container-a"), "container-a"),
+            },
+        },
+    }
+    // ...
+}
+```
+
+In this example:
+1.  We test a list with unique container names, which is valid.
+2.  We test a list with a duplicate name (`"container-a"`) and expect a `field.Duplicate` error. The error path uses `.Key("container-a")` because `name` is the `listMapKey`, demonstrating how the key is used to identify the problematic item.

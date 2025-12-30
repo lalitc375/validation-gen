@@ -94,3 +94,80 @@ func ValidateFeatureDependentState(state FeatureDependentState, fldPath *field.P
 }
 ```
 The `+k8s:ifDisabled` tag makes the conditional validation rule explicit in the API definition, reducing the need for imperative code.
+
+## Test Coverage
+
+When using `+k8s:ifDisabled`, your declarative validation tests should cover both scenarios: when the specified feature gate is enabled and when it is disabled. This ensures that the conditional validation is applied correctly in both cases.
+
+To control feature gates within a test, you can use the `featuregatetesting.SetFeatureGateDuringTest` helper function.
+
+### Example: Conditional Enum Exclusion
+
+Suppose you have a `Protocol` enum where `"Legacy"` is a valid option only when the `LegacySupport` feature gate is disabled.
+
+**File:** `pkg/apis/example/v1/types.go`
+```go
+// +k8s:enum
+type Protocol string
+
+const (
+    ProtocolModern Protocol = "Modern"
+    // +k8s:ifDisabled(LegacySupport)=+k8s:enumExclude
+    ProtocolLegacy Protocol = "Legacy"
+)
+
+type MyResource struct {
+    Protocol Protocol `json:"protocol"`
+}
+```
+
+Your `declarative_validation_test.go` should include tests for both states of the `LegacySupport` feature gate.
+
+**File:** `pkg/apis/example/validation/declarative_validation_test.go` (hypothetical example)
+```go
+import (
+    "testing"
+    "k8s.io/apimachinery/pkg/util/validation/field"
+    "k8s.io/apiserver/pkg/features"
+    utilfeature "k8s.io/apiserver/pkg/util/feature"
+    featuregatetesting "k8s.io/component-base/featuregate/testing"
+    "..." // other imports
+)
+
+func TestDeclarativeValidateConditionalEnum(t *testing.T) {
+    //
+    // Scenario 1: LegacySupport feature gate is DISABLED
+    //
+    t.Run("LegacySupport=false", func(t *testing.T) {
+        featuregatetesting.SetFeatureGateDuringTest(t, utilfeature.DefaultFeatureGate, features.LegacySupport, false)
+
+        // Test that "Legacy" is an allowed value
+        validObj := &example.MyResource{Protocol: example.ProtocolLegacy}
+        if errs := validateObject(validObj); len(errs) > 0 {
+            t.Errorf("expected no errors, but got: %v", errs)
+        }
+    })
+
+    //
+    // Scenario 2: LegacySupport feature gate is ENABLED
+    //
+    t.Run("LegacySupport=true", func(t *testing.T) {
+        featuregatetesting.SetFeatureGateDuringTest(t, utilfeature.DefaultFeatureGate, features.LegacySupport, true)
+
+        // Test that "Legacy" is now a forbidden value
+        invalidObj := &example.MyResource{Protocol: example.ProtocolLegacy}
+        expectedErrs := field.ErrorList{
+            field.NotSupported(field.NewPath("spec", "protocol"), "Legacy", []string{"Modern"}),
+        }
+        if errs := validateObject(invalidObj); !reflect.DeepEqual(errs, expectedErrs) {
+            t.Errorf("expected errors %v, but got: %v", expectedErrs, errs)
+        }
+    })
+}
+```
+
+In this example:
+1.  We define two sub-tests, one for each state of the `LegacySupport` feature gate.
+2.  `featuregatetesting.SetFeatureGateDuringTest` is used to enable or disable the feature gate for the duration of each sub-test.
+3.  When the feature is disabled, `ProtocolLegacy` is a valid enum value, and no error is expected.
+4.  When the feature is enabled, `+k8s:enumExclude` takes effect, and `ProtocolLegacy` becomes an invalid value, resulting in a `field.NotSupported` error.
