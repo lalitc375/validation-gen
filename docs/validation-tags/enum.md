@@ -1,0 +1,116 @@
+# +k8s:enum
+
+## Description
+Marks a string type as an enumeration. All `const` values defined for this type in the same package are considered valid values.
+
+## Scope
+`Type`
+
+## Supported Go Types
+`string`, `*string` (and any alias of these types)
+
+## Stability
+**Beta**
+
+## Usage
+
+### Type
+The `+k8s:enum` tag must be applied to a type definition.
+
+```go
+// +k8s:enum
+type Protocol string
+
+const (
+    TCP Protocol = "TCP"
+    UDP Protocol = "UDP"
+)
+```
+
+### Field
+To use the enum, reference the type in a struct field.
+
+```go
+type ServicePort struct {
+    Protocol Protocol `json:"protocol,omitempty"`
+}
+```
+
+### Map & Slice
+To validate items in a map or slice, the enum type must be used as the value.
+
+```go
+type ProtocolList struct {
+    // Validates that map values are valid Protocol values
+    Protocols map[string]Protocol `json:"protocols,omitempty"`
+}
+
+type ProtocolSlice struct {
+    // Validates that all items in the slice are valid Protocol values
+    Protocols []Protocol `json:"protocols,omitempty"`
+}
+```
+
+## Migrating from Handwritten Validation
+
+When converting a field with handwritten enum validation to use the declarative `+k8s:enum` tag, follow these steps:
+
+1.  **Define the Enum Type**: Create a new type alias for `string` and apply the `+k8s:enum` tag. Define the valid constant values for this new type.
+2.  **Update Field**: Change the field in your API struct to use the new enum type.
+3.  **Mark Errors**: In the handwritten validation function, mark the error as covered by declarative validation using `.MarkCoveredByDeclarative()`.
+
+## Detailed Example: Validating a Taint Effect
+
+This example demonstrates how to migrate the `Effect` field in a `Taint` struct from handwritten validation to a declarative enum.
+
+### 1. Define the Enum Type in `types.go`
+Create a new `TaintEffect` type with the `+k8s:enum` tag and define its constant values.
+
+**File:** `staging/src/k8s.io/api/core/v1/types.go`
+```go
+// +k8s:enum
+type TaintEffect string
+
+const (
+	TaintEffectNoSchedule TaintEffect = "NoSchedule"
+	TaintEffectNoExecute  TaintEffect = "NoExecute"
+)
+```
+
+### 2. Update the API Struct
+Modify the `Taint` struct to use the new `TaintEffect` enum type for the `Effect` field.
+
+**File:** `staging/src/k8s.io/api/core/v1/types.go`
+```go
+type Taint struct {
+    Key string `json:"key" protobuf:"bytes,1,name=key"`
+    Value string `json:"value,omitempty" protobuf:"bytes,2,opt,name=value"`
+    Effect TaintEffect `json:"effect" protobuf:"bytes,3,name=effect,casttype=TaintEffect"`
+}
+```
+
+### 3. Update Handwritten Validation
+In the existing validation logic, mark the validation for the `Effect` field as covered by declarative validation.
+
+**File:** `pkg/apis/core/validation/validation.go`
+
+```go
+func validateTaint(taint *core.Taint, fldPath *field.Path) field.ErrorList {
+    var allErrs field.ErrorList
+    // ... other validation for Key and Value ...
+
+    // Original handwritten validation for Effect:
+    //
+    // validEffects := sets.New(string(core.TaintEffectNoSchedule), string(core.TaintEffectNoExecute))
+    // if !validEffects.Has(string(taint.Effect)) {
+    //     allErrs = append(allErrs, field.NotSupported(fldPath.Child("effect"), taint.Effect, sets.List(validEffects)))
+    // }
+
+    // Mark as covered by declarative validation:
+    allErrs = append(allErrs, field.Invalid(fldPath.Child("effect"), taint.Effect, "invalid value").MarkCoveredByDeclarative())
+
+    return allErrs
+}
+```
+
+By following this pattern, you ensure that the declarative validation is correctly implemented and can be verified by the validation tooling, while maintaining compatibility with existing handwritten checks during the transition period.
