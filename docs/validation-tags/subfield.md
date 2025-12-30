@@ -104,3 +104,72 @@ func ValidateDeviceClass(obj *resource.DeviceClass, fldPath *field.Path) field.E
 }
 ```
 The `+k8s:subfield` tag makes the validation of nested fields explicit and easily readable in the API definition, reducing the verbosity of handwritten validation code.
+
+## Test Coverage
+
+When using `+k8s:subfield`, your declarative validation tests should verify that the validation rule is correctly applied to the specified sub-field.
+
+### Example
+
+Suppose you have a nested struct and you want to apply a `maxLength` validation to a sub-field.
+
+**File:** `pkg/apis/example/v1/types.go`
+```go
+type InnerSpec struct {
+    TargetField string `json:"targetField,omitempty"`
+}
+
+type OuterSpec struct {
+    Inner InnerSpec `json:"inner,omitempty"`
+}
+
+// +k8s:subfield(inner.targetField)=+k8s:maxLength=5
+type MyResource struct {
+    Outer OuterSpec `json:"outer,omitempty"`
+}
+```
+
+Your `declarative_validation_test.go` should include test cases to confirm that the validation is applied to `inner.targetField`.
+
+**File:** `pkg/apis/example/validation/declarative_validation_test.go` (hypothetical example)
+```go
+func TestDeclarativeValidateSubfield(t *testing.T) {
+    // ...
+    testCases := map[string]struct {
+        input        example.MyResource
+        expectedErrs field.ErrorList
+    }{
+        "subfield within length limit": {
+            input: example.MyResource{
+                Outer: example.OuterSpec{
+                    Inner: example.InnerSpec{
+                        TargetField: "valid",
+                    },
+                },
+            },
+            expectedErrs: field.ErrorList{},
+        },
+        "subfield exceeds length limit": {
+            input: example.MyResource{
+                Outer: example.OuterSpec{
+                    Inner: example.InnerSpec{
+                        TargetField: "this-is-too-long",
+                    },
+                },
+            },
+            expectedErrs: field.ErrorList{
+                field.TooLong(
+                    field.NewPath("outer", "inner", "targetField"),
+                    "", 5,
+                ).WithOrigin("maxLength"),
+            },
+        },
+    }
+    // ...
+}
+```
+
+In this example:
+1.  We test a case where the `targetField`'s length is within the limit, which should pass.
+2.  We test a case where the `targetField`'s length exceeds 5 characters and expect a `field.TooLong` error.
+3.  The error path correctly reflects the nested structure: `outer.inner.targetField`, demonstrating that `+k8s:subfield` has correctly targeted the validation.

@@ -147,3 +147,79 @@ func ValidateApplicationConfig(appConfig *ApplicationConfig, fldPath *field.Path
 }
 ```
 The `+k8s:unionMember` tag, together with `+k8s:unionDiscriminator`, provides a robust and declarative way to define and validate one-of relationships in API objects.
+
+## Test Coverage
+
+The `+k8s:unionMember` tag identifies a field as part of a discriminated union. Its validation is inherently tied to the `+k8s:union` and `+k8s:unionDiscriminator` tags. Tests should verify that the mutual exclusivity and discriminator-to-member mapping rules are correctly enforced for all fields marked as union members.
+
+The test strategy is the same as for `+k8s:unionDiscriminator`.
+
+### Example
+
+Suppose you have a union type for specifying a protocol, where `type` is the discriminator and `TCP` and `UDP` are the members.
+
+**File:** `pkg/apis/example/v1/types.go`
+```go
+// +k8s:union
+// +k8s:unionDiscriminator=type
+type ProtocolConfig struct {
+    // +k8s:unionMember
+    Type string `json:"type"`
+
+    // +k8s:unionMember(discriminator="TCP")
+    TCP *TCPConfig `json:"tcp,omitempty"`
+
+    // +k8s:unionMember(discriminator="UDP")
+    UDP *UDPConfig `json:"udp,omitempty"`
+}
+
+type TCPConfig struct {
+    Timeout int `json:"timeout"`
+}
+type UDPConfig struct {
+    BufferSize int `json:"bufferSize"`
+}
+```
+
+Your `declarative_validation_test.go` should test that only one union member can be set at a time and that it matches the discriminator.
+
+**File:** `pkg/apis/example/validation/declarative_validation_test.go` (hypothetical example)
+```go
+func TestDeclarativeValidateUnion(t *testing.T) {
+    // ...
+    testCases := map[string]struct {
+        input        example.ProtocolConfig
+        expectedErrs field.ErrorList
+    }{
+        "valid tcp config": {
+            input: example.ProtocolConfig{
+                Type: "TCP",
+                TCP: &example.TCPConfig{Timeout: 100},
+            },
+            expectedErrs: field.ErrorList{},
+        },
+        "multiple members set": {
+            input: example.ProtocolConfig{
+                Type: "TCP",
+                TCP:  &example.TCPConfig{Timeout: 100},
+                UDP:  &example.UDPConfig{BufferSize: 2048},
+            },
+            expectedErrs: field.ErrorList{
+                field.Invalid(field.NewPath("udp"), "set", "must not be set when tcp is set"),
+            },
+        },
+        "discriminator does not match member": {
+            input: example.ProtocolConfig{
+                Type: "UDP", // Mismatch
+                TCP:  &example.TCPConfig{Timeout: 100},
+            },
+            expectedErrs: field.ErrorList{
+                field.Invalid(field.NewPath("type"), "UDP", "must be 'TCP' when 'tcp' is set"),
+            },
+        },
+    }
+    // ...
+}
+```
+
+This testing approach validates that the fields marked with `+k8s:unionMember` correctly adhere to the discriminated union rules.

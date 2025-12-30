@@ -146,3 +146,89 @@ func ValidateResourceSource(resourceSource *ResourceSource, fldPath *field.Path)
 ```
 The `+k8s:unionDiscriminator` and `+k8s:unionMember` tags establish a clear and enforced contract for discriminated unions within the Kubernetes API.
 
+## Test Coverage
+
+When using `+k8s:union` with `+k8s:unionDiscriminator`, your declarative validation tests should verify that:
+1.  Exactly one of the union member fields is set.
+2.  The discriminator field is set to the correct value corresponding to the chosen member.
+
+### Example
+
+Suppose you have a union type for specifying a protocol, where `type` is the discriminator.
+
+**File:** `pkg/apis/example/v1/types.go`
+```go
+// +k8s:union
+// +k8s:unionDiscriminator=type
+type ProtocolConfig struct {
+    // +k8s:unionMember
+    Type string `json:"type"`
+
+    // +k8s:unionMember(discriminator="TCP")
+    TCP *TCPConfig `json:"tcp,omitempty"`
+
+    // +k8s:unionMember(discriminator="UDP")
+    UDP *UDPConfig `json:"udp,omitempty"`
+}
+
+type TCPConfig struct {
+    Timeout int `json:"timeout"`
+}
+type UDPConfig struct {
+    BufferSize int `json:"bufferSize"`
+}
+```
+
+Your `declarative_validation_test.go` should test the mutual exclusivity and discriminator correctness.
+
+**File:** `pkg/apis/example/validation/declarative_validation_test.go` (hypothetical example)
+```go
+func TestDeclarativeValidateUnion(t *testing.T) {
+    // ...
+    testCases := map[string]struct {
+        input        example.ProtocolConfig
+        expectedErrs field.ErrorList
+    }{
+        "valid tcp config": {
+            input: example.ProtocolConfig{
+                Type: "TCP",
+                TCP: &example.TCPConfig{Timeout: 100},
+            },
+            expectedErrs: field.ErrorList{},
+        },
+        "multiple members set": {
+            input: example.ProtocolConfig{
+                Type: "TCP",
+                TCP:  &example.TCPConfig{Timeout: 100},
+                UDP:  &example.UDPConfig{BufferSize: 2048},
+            },
+            expectedErrs: field.ErrorList{
+                field.Invalid(field.NewPath("udp"), "set", "must not be set when tcp is set"),
+            },
+        },
+        "discriminator does not match member": {
+            input: example.ProtocolConfig{
+                Type: "UDP", // Mismatch
+                TCP:  &example.TCPConfig{Timeout: 100},
+            },
+            expectedErrs: field.ErrorList{
+                field.Invalid(field.NewPath("type"), "UDP", "must be 'TCP' when 'tcp' is set"),
+            },
+        },
+        "no member set": {
+            input: example.ProtocolConfig{
+                Type: "TCP", // Discriminator is set, but member is not
+            },
+            expectedErrs: field.ErrorList{
+                field.Required(field.NewPath("tcp"), "must be set when 'type' is 'TCP'"),
+            },
+        },
+    }
+    // ...
+}
+```
+
+In this example:
+1.  We test a valid configuration where the `type` discriminator matches the set member (`TCP`).
+2.  We test three invalid cases: multiple members set, a mismatched discriminator, and a missing member for a set discriminator.
+3.  The validation system generates appropriate `field.Invalid` and `field.Required` errors to enforce the union rules.
