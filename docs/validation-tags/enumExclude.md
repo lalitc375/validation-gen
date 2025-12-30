@@ -1,0 +1,59 @@
+# +k8s:enumExclude
+
+## Description
+Excludes a specific constant from the allowed enum values.
+
+## Scope
+`Const`
+
+## Supported Go Types
+Applies to a `const` value of a type that has been marked with `+k8s:enum`.
+
+## Stability
+**Alpha**
+
+## Usage
+
+The `+k8s:enumExclude` tag is applied to a constant declaration.
+
+### Const
+```go
+// +k8s:enum
+type Protocol string
+
+const (
+    TCP Protocol = "TCP"
+    UDP Protocol = "UDP"
+
+    // +k8s:enumExclude
+    InternalProtocol Protocol = "Internal" // This value will not be considered valid
+)
+```
+The excluded constant will not be part of the generated enum validation for the `Protocol` type.
+
+## Migrating from Handwritten Validation
+
+The `+k8s:enumExclude` tag allows you to easily remove specific values from an enum's set of valid options without altering the underlying type or its handwritten validation logic (if any exists). This is particularly useful when certain enum values are intended for internal use only or become deprecated.
+
+## Detailed Example: Excluding an Internal Enum Value
+
+This example demonstrates how to use `+k8s:enumExclude` to prevent an internal or deprecated constant value from being considered a valid enum option.
+
+### 1. Define the Enum Type and Constant
+Define an enum type with `+k8s:enum` and declare a constant value that you wish to exclude. Apply `+k8s:enumExclude` directly to this constant.
+
+**File:** `pkg/apis/example/v1/types.go`
+```go
+// +k8s:enum
+type ConnectionState string
+
+const (
+	ConnectionStateConnected    ConnectionState = "Connected"
+	ConnectionStateDisconnected ConnectionState = "Disconnected"
+	// +k8s:enumExclude
+	ConnectionStateInternalOnly ConnectionState = "InternalOnly" // This will be excluded from validation
+)
+```
+
+### 2. Generated Validation Behavior
+When validation code is generated, any field using `ConnectionState` will accept "Connected" and "Disconnected", but will reject "InternalOnly". Previously, you would have needed explicit handwritten checks to filter out "InternalOnly".
