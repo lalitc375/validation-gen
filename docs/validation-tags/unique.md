@@ -68,7 +68,7 @@ When `+k8s:unique` is used, the generated validation code automatically handles 
 
 This example demonstrates how `+k8s:unique=set` enforces uniqueness for a list of simple strings, and `+k8s:unique=map` (with `+k8s:listMapKey`) enforces uniqueness based on an `ID` field for a list of complex objects.
 
-### 1. Define the Tags in `types.go`
+### 1. Define the Tag in `types.go`
 Apply `+k8s:unique=set` to a string slice and `+k8s:unique=map` with `+k8s:listMapKey` to a slice of structs.
 
 **File:** `pkg/apis/example/v1/types.go`
@@ -143,3 +143,53 @@ func ValidateMyResourceSpec(spec *MyResourceSpec, fldPath *field.Path) field.Err
 }
 ```
 The `+k8s:unique` tag eliminates the need for manual uniqueness checks, making the API definition more declarative and reducing the amount of handwritten validation code.
+
+## Test Coverage
+
+The `+k8s:unique` tag is a structural hint to the validation system and does not, by itself, enforce a validation rule. Its correctness is tested indirectly through other validation tags that rely on it, such as `+k8s:item` and `+k8s:unique`.
+
+### Example: `listType=set`
+
+When `listType=set`, uniqueness is based on the entire value of each item in the list.
+
+**File:** `pkg/apis/example/v1/types.go`
+```go
+type MyStruct struct {
+    // +k8s:listType=set
+    // +k8s:unique
+    Values []string `json:"values,omitempty"`
+}
+```
+
+Your `declarative_validation_test.go` should include a test case with duplicate items.
+
+**File:** `pkg/apis/example/validation/declarative_validation_test.go`
+```go
+func TestDeclarativeValidateUniqueSet(t *testing.T) {
+    // ...
+    testCases := map[string]struct {
+        input        example.MyStruct
+        expectedErrs field.ErrorList
+    }{
+        "unique items in set": {
+            input: mkMyStruct(func(obj *example.MyStruct) {
+                obj.Values = []string{"a", "b", "c"}
+            }),
+            expectedErrs: field.ErrorList{},
+        },
+        "duplicate items in set": {
+            input: mkMyStruct(func(obj *example.MyStruct) {
+                obj.Values = []string{"a", "b", "a"}
+            }),
+            expectedErrs: field.ErrorList{
+                field.Duplicate(field.NewPath("spec", "values").Index(2), "a"),
+            },
+        },
+    }
+    // ...
+}
+```
+
+### Example: `listType=map`
+
+When `listType=map`, uniqueness is based on the fields specified by `+k8s:listMapKey`. See the `listMapKey` documentation for a detailed example.
