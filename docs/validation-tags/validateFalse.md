@@ -1,54 +1,69 @@
-# +k8s:validateFalse
+# +k8s:validation:validateFalse
 
 ## Description
-Validation always fails. Used primarily for testing the validation generator. When this tag is encountered, the generated validation code will unconditionally return a validation error.
+Specifies that the value of the field must be `false`. This tag is used to enforce that a boolean field is always set to `false`.
 
 ## Scope
-`Field`, `Type`
+`Field`
 
 ## Supported Go Types
-Any Go type. The purpose of this tag is to force a validation failure, so the underlying type is not relevant.
+`bool`
+
+## Stability
+**Alpha**
 
 ## Usage
 
 ### Field
 ```go
-type MyStruct struct {
-    // This field will always cause a validation error when set.
-    // +k8s:validateFalse
-    AlwaysFailingField string `json:"alwaysFailingField"`
+type MyObject struct {
+    // This feature is disabled and must be set to false.
+    // +k8s:validation:validateFalse
+    FeatureEnabled bool `json:"featureEnabled"`
 }
 ```
-
-### Type
-```go
-// Any field using this type will always cause a validation error.
-// +k8s:validateFalse
-type AlwaysFailingType string
-
-type MyStruct struct {
-    AnotherFailingField AlwaysFailingType `json:"anotherFailingField"`
-}
-```
-This tag is intended for internal testing and debugging of the code generator and generated validation logic, not for use in production API definitions.
+This tag is useful for fields that are intended to be disabled or are not yet implemented, ensuring that they cannot be set to `true`.
 
 ## Migrating from Handwritten Validation
 
-The `+k8s:validateFalse` tag is a diagnostic tool for the validation code generator. It is **not** used in regular API definitions for end-user validation. Therefore, it does not have a "migration path" from handwritten validation in the conventional sense. Its purpose is to intentionally make validation fail to test the generator's behavior.
+If you have existing handwritten validation that checks if a boolean field is `false`, you can replace it with the `+k8s:validation:validateFalse` tag.
 
-## Detailed Example: Forcing a Validation Failure
-
-This example shows how to use `+k8s:validateFalse` to intentionally make validation fail for a field, which can be useful when developing and testing the validation generator itself.
-
-### 1. Define a Struct with `+k8s:validateFalse`
-Apply the `+k8s:validateFalse` tag to a field or a type within your test code.
-
-**File:** `pkg/apis/example/v1/types_test.go` (hypothetical test file for validation generator)
+For example, if your old validation logic was:
 ```go
-type FailingStructForTest struct {
-    // Setting this field will always result in a validation error.
-    // +k8s:validateFalse
-    ThisFieldShouldAlwaysFail string `json:"thisFieldShouldAlwaysFail"`
+if obj.FeatureEnabled {
+    allErrs = append(allErrs, field.Invalid(fldPath.Child("featureEnabled"), obj.FeatureEnabled, "must be false"))
 }
 ```
-When validation code is generated for `FailingStructForTest`, any attempt to set `ThisFieldShouldAlwaysFail` to any value will result in a validation error, allowing the testing of error handling paths.
+You can remove this code and use the declarative tag instead:
+```go
+// +k8s:validation:validateFalse
+FeatureEnabled bool `json:"featureEnabled"`
+```
+This simplifies the validation logic and makes the intent clear in the type definition.
+
+## Test Coverage
+
+To test the `+k8s:validation:validateFalse` tag, you should create test cases that check both the valid (`false`) and invalid (`true`) states of the boolean field.
+
+### Example: Enforcing a Feature Flag to be Disabled
+
+**File:** `pkg/apis/example/v1/types.go`
+```go
+type FeatureFlags struct {
+    // This feature is currently experimental and must be disabled.
+    // +k8s:validation:validateFalse
+    EnableAlphaFeature bool `json:"enableAlphaFeature"`
+}
+```
+
+**Test Cases:**
+```go
+// 1. Test with the field set to false (Valid)
+validObj := &example.FeatureFlags{EnableAlphaFeature: false}
+// expected: no validation error
+
+// 2. Test with the field set to true (Invalid)
+invalidObj := &example.FeatureFlags{EnableAlphaFeature: true}
+// expected: field.Invalid(..., "must be false")
+```
+These tests verify that the `+k8s:validation:validateFalse` tag correctly enforces that the boolean field is always `false`.

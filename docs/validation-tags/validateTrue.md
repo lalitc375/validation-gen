@@ -1,55 +1,69 @@
-# +k8s:validateTrue
+# +k8s:validation:validateTrue
 
 ## Description
-Validation always succeeds. Used primarily for testing the validation generator. When this tag is encountered, the generated validation code will unconditionally return no validation errors.
+Specifies that the value of the field must be `true`. This tag is used to enforce that a boolean field is always set to `true`.
 
 ## Scope
-`Field`, `Type`
+`Field`
 
 ## Supported Go Types
-Any Go type. The purpose of this tag is to force validation success, so the underlying type is not relevant.
+`bool`
+
+## Stability
+**Alpha**
 
 ## Usage
 
 ### Field
 ```go
-type MyStruct struct {
-    // This field will always pass validation, regardless of its value.
-    // +k8s:validateTrue
-    AlwaysPassingField string `json:"alwaysPassingField"`
+type MyObject struct {
+    // This feature must be enabled.
+    // +k8s:validation:validateTrue
+    LicenseAccepted bool `json:"licenseAccepted"`
 }
 ```
-
-### Type
-```go
-// Any field using this type will always pass validation.
-// +k8s:validateTrue
-type AlwaysPassingType string
-
-type MyStruct struct {
-    AnotherPassingField AlwaysPassingType `json:"anotherPassingField"`
-}
-```
-This tag is intended for internal testing and debugging of the code generator and generated validation logic, not for use in production API definitions.
+This tag is useful for fields that must be explicitly enabled or acknowledged, ensuring they cannot be set to `false`.
 
 ## Migrating from Handwritten Validation
 
-The `+k8s:validateTrue` tag is a diagnostic tool for the validation code generator. It is **not** used in regular API definitions for end-user validation. Therefore, it does not have a "migration path" from handwritten validation in the conventional sense. Its purpose is to intentionally make validation always succeed to test the generator's behavior.
+If you have existing handwritten validation that checks if a boolean field is `true`, you can replace it with the `+k8s:validation:validateTrue` tag.
 
-## Detailed Example: Forcing Validation Success
-
-This example shows how to use `+k8s:validateTrue` to intentionally make validation always succeed for a field, which can be useful when developing and testing the validation generator itself.
-
-### 1. Define a Struct with `+k8s:validateTrue`
-Apply the `+k8s:validateTrue` tag to a field or a type within your test code.
-
-**File:** `pkg/apis/example/v1/types_test.go` (hypothetical test file for validation generator)
+For example, if your old validation logic was:
 ```go
-type PassingStructForTest struct {
-    // This field will always pass validation, regardless of its content.
-    // +k8s:validateTrue
-    ThisFieldShouldAlwaysPass string `json:"thisFieldShouldAlwaysPass"`
+if !obj.LicenseAccepted {
+    allErrs = append(allErrs, field.Invalid(fldPath.Child("licenseAccepted"), obj.LicenseAccepted, "must be true"))
 }
 ```
-When validation code is generated for `PassingStructForTest`, any value provided for `ThisFieldShouldAlwaysPass` will be considered valid, allowing the testing of scenarios where validation should explicitly succeed.
+You can remove this code and use the declarative tag instead:
+```go
+// +k8s:validation:validateTrue
+LicenseAccepted bool `json:"licenseAccepted"`
+```
+This simplifies the validation logic and makes the intent clear in the type definition.
 
+## Test Coverage
+
+To test the `+k8s:validation:validateTrue` tag, you should create test cases that check both the valid (`true`) and invalid (`false`) states of the boolean field.
+
+### Example: Requiring Acceptance of Terms
+
+**File:** `pkg/apis/example/v1/types.go`
+```go
+type UserPreferences struct {
+    // The user must agree to the terms of service.
+    // +k8s:validation:validateTrue
+    TermsAgreed bool `json:"termsAgreed"`
+}
+```
+
+**Test Cases:**
+```go
+// 1. Test with the field set to true (Valid)
+validObj := &example.UserPreferences{TermsAgreed: true}
+// expected: no validation error
+
+// 2. Test with the field set to false (Invalid)
+invalidObj := &example.UserPreferences{TermsAgreed: false}
+// expected: field.Invalid(..., "must be true")
+```
+These tests verify that the `+k8s:validation:validateTrue` tag correctly enforces that the boolean field is always `true`.

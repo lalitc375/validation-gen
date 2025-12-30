@@ -1,117 +1,111 @@
-# +k8s:zeroOrOneOfMember
+# +k8s:validation:zeroOrOneOfMember
 
 ## Description
-Defines a "loose" union where **at most one** member can be set (all unset is valid). This is useful for fields that represent alternative choices, where having zero choices or exactly one choice is valid.
+The `+k8s:validation:zeroOrOneOfMember` tag is a validation rule that ensures exclusivity among a group of fields within a struct. When applied to multiple fields, it enforces that at most one of them can have a non-zero/non-nil value at any given time. This is useful for implementing unions or choices where only one option can be selected.
 
 ## Scope
 `Field`
 
 ## Supported Go Types
-Any Go type. The tag indicates that this field is part of a group where at most one field can be set.
+Any Go type, including scalar types (like `int`, `string`), slices, maps, and pointers. The "zero" value is determined by the type's default (e.g., `0` for `int`, `""` for `string`, `nil` for pointers/slices/maps).
 
-## Arguments
-`union=<name>` (optional): Specifies the name of the union if a struct contains multiple independent "zero or one of" groups.
+## Payload
+A unique identifier string. All fields tagged with the same identifier belong to the same exclusivity group.
 
 ## Stability
-**Stable**
+**Alpha**
 
 ## Usage
 
 ### Field
 ```go
-type PodSchedulingGate struct {
-    // This field is part of a "zero or one of" group. If set, no other fields in this group can be set.
-    // +k8s:zeroOrOneOfMember
-    // +k8s:optional
-    Name string `json:"name,omitempty"`
-
-    // This field is also part of the same group. If Name is set, this must be unset, and vice versa.
-    // +k8s:zeroOrOneOfMember
-    // +k8s:optional
-    CustomGate *CustomGateConfig `json:"customGate,omitempty"`
+type Action struct {
+    // Only one of the following actions can be specified.
+    // +k8s:validation:zeroOrOneOfMember="action"
+    Sleep *SleepAction `json:"sleep,omitempty"`
+    // +k8s:validation:zeroOrOneOfMember="action"
+    Http *HTTPAction `json:"http,omitempty"`
+    // +k8s:validation:zeroOrOneOfMember="action"
+    Exec *ExecAction `json:"exec,omitempty"`
 }
-
-type CustomGateConfig struct { /* ... */ }
 ```
-In this example, either `Name` can be set, or `CustomGate` can be set, or neither can be set. However, both cannot be set simultaneously.
+In this example, `Sleep`, `Http`, and `Exec` are part of the "action" group. Validation will fail if more than one of these fields is set.
 
 ## Migrating from Handwritten Validation
 
-The `+k8s:zeroOrOneOfMember` tag declaratively enforces an "at most one" constraint among a set of fields, including the case where all fields are unset. This directly replaces handwritten validation logic that would manually check for mutual exclusivity and generate `field.Forbidden` or `field.Invalid` errors if multiple fields were set.
+The `+k8s:validation:zeroOrOneOfMember` tag replaces handwritten logic that checks for mutual exclusivity among fields. This is often done by counting how many of the fields are non-nil/non-zero and returning an error if the count is greater than one.
 
-This tag is particularly powerful when used in conjunction with `+k8s:item` to apply such a constraint to specific elements within a list.
-
-## Detailed Example: Mutually Exclusive Certificate Conditions
-
-This example demonstrates how `+k8s:zeroOrOneOfMember` is used with `+k8s:item` to ensure that a `CertificateSigningRequest` can have at most one of an "Approved" or "Denied" condition.
-
-### 1. Define the Tags in `types.go`
-Apply the `+k8s:item(type="...")=+k8s:zeroOrOneOfMember` to the `Conditions` field in `CertificateSigningRequestStatus`.
-
-**File:** `staging/src/k8s.io/api/certificates/v1/types.go`
+For example, old validation logic might look like this:
 ```go
-type CertificateSigningRequestStatus struct {
-    // ...
-    // conditions applied to the request. Known conditions are "Approved", "Denied", and "Failed".
-    // Approved and Denied conditions are mutually exclusive.
-    // +listType=map
-    // +k8s:listMapKey=type
-    // +k8s:item(type: "Approved")=+k8s:zeroOrOneOfMember
-    // +k8s:item(type: "Denied")=+k8s:zeroOrOneOfMember
-    Conditions []CertificateSigningRequestCondition `json:"conditions,omitempty" protobuf:"bytes,1,rep,name=conditions"`
-    // ...
-}
-```
-
-### 2. Update Handwritten Validation
-In the corresponding handwritten validation function for `CertificateSigningRequestStatus`, remove or mark as covered the explicit checks for mutual exclusivity between "Approved" and "Denied" conditions.
-
-**File:** `pkg/apis/certificates/validation/validation.go`
-```go
-func validateConditions(fldPath *field.Path, csr *certificates.CertificateSigningRequest, opts certificateValidationOptions) field.ErrorList {
+func validateAction(action *Action, fldPath *field.Path) field.ErrorList {
     allErrs := field.ErrorList{}
-    // ...
-    hasApproved := false
-    hasDenied := false
-
-    for i, c := range csr.Status.Conditions {
-        // ... other validations ...
-
-        // Original handwritten mutual exclusivity check (example):
-        // if !opts.allowBothApprovedAndDenied { // 'opts' might be for compatibility
-        //     switch c.Type {
-        //     case certificates.CertificateApproved:
-        //         hasApproved = true
-        //         if hasDenied {
-        //             allErrs = append(allErrs, field.Invalid(fldPath, c.Type, "Approved and Denied conditions are mutually exclusive"))
-        //         }
-        //     case certificates.CertificateDenied:
-        //         hasDenied = true
-        //         if hasApproved {
-        //             allErrs = append(allErrs, field.Invalid(fldPath, c.Type, "Approved and Denied conditions are mutually exclusive"))
-        //         }
-        //     }
-        // }
-
-        // With +k8s:item(type="...")=+k8s:zeroOrOneOfMember, this check is generated automatically.
-        // If still present for backward compatibility during migration, mark the error as covered:
-        if !opts.allowBothApprovedAndDenied {
-            switch c.Type {
-            case certificates.CertificateApproved:
-                hasApproved = true
-                if hasDenied {
-                    allErrs = append(allErrs, field.Invalid(fldPath, c.Type, "Approved and Denied conditions are mutually exclusive").WithOrigin("zeroOrOneOf").MarkCoveredByDeclarative())
-                }
-            case certificates.CertificateDenied:
-                hasDenied = true
-                if hasApproved {
-                    allErrs = append(allErrs, field.Invalid(fldPath, c.Type, "Approved and Denied conditions are mutually exclusive").WithOrigin("zeroOrOneOf").MarkCoveredByDeclarative())
-                }
-            }
-        }
+    count := 0
+    if action.Sleep != nil { count++ }
+    if action.Http != nil { count++ }
+    if action.Exec != nil { count++ }
+    if count > 1 {
+        allErrs = append(allErrs, field.Invalid(fldPath, action, "only one of sleep, http, or exec can be set"))
     }
-
     return allErrs
 }
 ```
-The `+k8s:zeroOrOneOfMember` tag, especially when combined with `+k8s:item`, allows for precise and declarative definition of mutually exclusive choices, simplifying validation logic.
+By using the `+k8s:validation:zeroOrOneOfMember` tag, this entire function can be replaced with declarative rules on the struct fields, simplifying the code and making the validation intent clearer.
+
+## Test Coverage
+
+To test the `+k8s:validation:zeroOrOneOfMember` tag, you should create test cases that cover all valid and invalid combinations of the fields in the exclusivity group.
+
+### Example: Exclusive Action Types
+
+**File:** `pkg/apis/example/v1/types.go`
+```go
+type Action struct {
+    // +k8s:validation:zeroOrOneOfMember="action"
+    Sleep *SleepAction `json:"sleep,omitempty"`
+
+    // +k8s:validation:zeroOrOneOfMember="action"
+    Http *HTTPAction `json:"http,omitempty"`
+
+    // +k8s:validation:zeroOrOneOfMember="action"
+    Exec *ExecAction `json:"exec,omitempty"`
+}
+
+type SleepAction struct {
+    Seconds int `json:"seconds"`
+}
+type HTTPAction struct {
+    URL string `json:"url"`
+}
+type ExecAction struct {
+    Command []string `json:"command"`
+}
+```
+
+**Test Cases:**
+```go
+// 1. All fields are nil (Valid)
+validObj1 := &example.Action{}
+// expected: no validation error
+
+// 2. Only one field is set (Valid)
+validObj2 := &example.Action{
+    Sleep: &example.SleepAction{Seconds: 10},
+}
+// expected: no validation error
+
+// 3. Two or more fields are set (Invalid)
+invalidObj1 := &example.Action{
+    Sleep: &example.SleepAction{Seconds: 10},
+    Http:  &example.HTTPAction{URL: "http://example.com"},
+}
+// expected: field.Invalid(..., "exactly one of [exec, http, sleep] must be set")
+
+// 4. All three fields are set (Invalid)
+invalidObj2 := &example.Action{
+    Sleep: &example.SleepAction{Seconds: 10},
+    Http:  &example.HTTPAction{URL: "http://example.com"},
+    Exec:  &example.ExecAction{Command: []string{"/bin/sh"}},
+}
+// expected: field.Invalid(..., "exactly one of [exec, http, sleep] must be set")
+```
+These test cases ensure that the `+k8s:validation:zeroOrOneOfMember` rule is correctly enforced, allowing zero or one, but not more than one, of the specified fields to be set.

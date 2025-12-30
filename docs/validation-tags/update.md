@@ -82,3 +82,69 @@ func ValidateResourceClaimStatusUpdate(newClaim, oldClaim *resource.ResourceClai
 }
 ```
 The `+k8s:update=NoModify` tag ensures that the `Allocation` field, once populated, cannot be changed on subsequent updates, providing clear API behavior and reducing custom validation code.
+
+## Test Coverage
+
+When using `+k8s:update`, your declarative validation tests should cover the specific update constraints (`NoSet` or `NoUnset`) applied to the field.
+
+### Example: `NoUnset`
+
+The `NoUnset` rule prevents a field from being changed from a non-nil value to `nil`.
+
+**File:** `pkg/apis/example/v1/types.go`
+```go
+type MyStruct struct {
+    // This field cannot be unset once it has been set.
+    // +k8s:update=NoUnset
+    Config *string `json:"config,omitempty"`
+}
+```
+
+**Test Cases:**
+```go
+// oldObj has the field set
+oldObj := &example.MyStruct{Config: ptr.To("initial-value")}
+
+// 1. Update with non-nil value -> nil: Should FAIL
+update1 := oldObj.DeepCopy()
+update1.Config = nil
+// expected: field.Invalid(..., "cannot be unset")
+
+// 2. Update with non-nil value -> another non-nil value: Should PASS
+update2 := oldObj.DeepCopy()
+update2.Config = ptr.To("new-value")
+// expected: no error
+```
+
+### Example: `NoSet`
+
+The `NoSet` rule prevents a field from being changed from `nil` to a non-nil value.
+
+**File:** `pkg/apis/example/v1/types.go`
+```go
+type MyStruct struct {
+    // This field cannot be set after initial creation if it was nil.
+    // +k8s:update=NoSet
+    ImmutableConfig *string `json:"immutableConfig,omitempty"`
+}
+```
+
+**Test Cases:**
+```go
+// oldObj has the field as nil
+oldObj := &example.MyStruct{ImmutableConfig: nil}
+
+// 1. Update with nil -> non-nil: Should FAIL
+update1 := oldObj.DeepCopy()
+update1.ImmutableConfig = ptr.To("a-new-value")
+// expected: field.Invalid(..., "cannot be set")
+
+// oldObj2 has the field set
+oldObj2 := &example.MyStruct{ImmutableConfig: ptr.To("initial-value")}
+
+// 2. Update with non-nil -> nil: Should PASS
+update2 := oldObj2.DeepCopy()
+update2.ImmutableConfig = nil
+// expected: no error
+```
+By testing these state transitions, you can ensure that the `+k8s:update` rules are correctly enforced.
