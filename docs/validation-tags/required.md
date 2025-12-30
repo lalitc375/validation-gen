@@ -73,3 +73,53 @@ func ValidatePodSpec(spec *core.PodSpec, fldPath *field.Path, opts PodValidation
 }
 ```
 The `+k8s:required` tag makes the mandatory nature of the `Containers` field explicit in the API definition, simplifying validation logic and ensuring that clients always provide this essential information.
+
+## Test Coverage
+
+When using `+k8s:required`, you should add declarative validation tests to verify that an error is returned when the required field is not set.
+
+### Example
+
+Suppose you have a `name` field that must always be provided.
+
+**File:** `pkg/apis/example/v1/types.go`
+```go
+type MyStruct struct {
+    // +k8s:required
+    Name string `json:"name"`
+}
+```
+
+Your `declarative_validation_test.go` should include a test case that fails when `name` is empty.
+
+**File:** `pkg/apis/example/validation/declarative_validation_test.go`
+```go
+func TestDeclarativeValidateRequired(t *testing.T) {
+    // ...
+    testCases := map[string]struct {
+        input        example.MyStruct
+        expectedErrs field.ErrorList
+    }{
+        "required field is present": {
+            input: mkMyStruct(func(obj *example.MyStruct) {
+                obj.Name = "a-valid-name"
+            }),
+            expectedErrs: field.ErrorList{},
+        },
+        "required field is empty": {
+            input: mkMyStruct(func(obj *example.MyStruct) {
+                obj.Name = ""
+            }),
+            expectedErrs: field.ErrorList{
+                field.Required(field.NewPath("spec", "name"), "").WithOrigin("required"),
+            },
+        },
+    }
+    // ...
+}
+```
+
+In this example:
+1.  We test the valid case where the required field is set.
+2.  We test the invalid case where the required field is empty and expect a `field.Required` error.
+3.  The error origin is `required`, corresponding to the `+k8s:required` tag.
