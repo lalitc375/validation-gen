@@ -24,6 +24,7 @@ import (
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:prerelease-lifecycle-gen:introduced=1.19
+// +k8s:validation-gen=true
 
 // Event is a report of an event somewhere in the cluster. It generally denotes some state change in the system.
 // Events have a limited retention time and triggers and messages may evolve
@@ -48,6 +49,7 @@ type Event struct {
 
 	// reportingController is the name of the controller that emitted this Event, e.g. `kubernetes.io/kubelet`.
 	// This field cannot be empty for new Events.
+	// +k8s:format=k8s-label-key
 	ReportingController string `json:"reportingController,omitempty" protobuf:"bytes,4,opt,name=reportingController"`
 
 	// reportingInstance is the ID of the controller instance, e.g. `kubelet-xyzf`.

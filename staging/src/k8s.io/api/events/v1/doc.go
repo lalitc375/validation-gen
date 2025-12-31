@@ -17,6 +17,7 @@ limitations under the License.
 // +k8s:deepcopy-gen=package
 // +k8s:protobuf-gen=package
 // +k8s:openapi-gen=true
+// +k8s:validation-gen=package
 // +k8s:prerelease-lifecycle-gen=true
 // +k8s:openapi-model-package=io.k8s.api.events.v1
 

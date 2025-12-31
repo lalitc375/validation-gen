@@ -162,7 +162,7 @@ func legacyValidateEvent(event *core.Event, requestVersion schema.GroupVersion) 
 		if len(event.ReportingController) == 0 {
 			allErrs = append(allErrs, field.Required(field.NewPath(reportingControllerFieldName), ""))
 		}
-		allErrs = append(allErrs, ValidateQualifiedName(event.ReportingController, field.NewPath(reportingControllerFieldName))...)
+		allErrs = append(allErrs, ValidateQualifiedName(event.ReportingController, field.NewPath(reportingControllerFieldName)).MarkCoveredByDeclarative()...)
 		if len(event.ReportingInstance) == 0 {
 			allErrs = append(allErrs, field.Required(field.NewPath("reportingInstance"), ""))
 		}
