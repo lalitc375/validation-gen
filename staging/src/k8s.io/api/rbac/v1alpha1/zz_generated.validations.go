@@ -90,6 +90,31 @@ func RegisterValidations(scheme *runtime.Scheme) error {
 	return nil
 }
 
+// Validate_AggregationRule validates an instance of AggregationRule according
+// to declarative validation rules in the API schema.
+func Validate_AggregationRule(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *AggregationRule) (errs field.ErrorList) {
+	// field AggregationRule.ClusterRoleSelectors
+	errs = append(errs,
+		func(fldPath *field.Path, obj, oldObj []v1.LabelSelector, oldValueCorrelated bool) (errs field.ErrorList) {
+			// don't revalidate unchanged data
+			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+				return nil
+			}
+			// call field-attached validations
+			earlyReturn := false
+			if e := validate.RequiredSlice(ctx, op, fldPath, obj, oldObj); len(e) != 0 {
+				errs = append(errs, e...)
+				earlyReturn = true
+			}
+			if earlyReturn {
+				return // do not proceed
+			}
+			return
+		}(fldPath.Child("clusterRoleSelectors"), obj.ClusterRoleSelectors, safe.Field(oldObj, func(oldObj *AggregationRule) []v1.LabelSelector { return oldObj.ClusterRoleSelectors }), oldObj != nil)...)
+
+	return errs
+}
+
 // Validate_ClusterRole validates an instance of ClusterRole according
 // to declarative validation rules in the API schema.
 func Validate_ClusterRole(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *ClusterRole) (errs field.ErrorList) {
@@ -118,7 +143,27 @@ func Validate_ClusterRole(ctx context.Context, op operation.Operation, fldPath *
 		}(fldPath.Child("metadata"), &obj.ObjectMeta, safe.Field(oldObj, func(oldObj *ClusterRole) *v1.ObjectMeta { return &oldObj.ObjectMeta }), oldObj != nil)...)
 
 	// field ClusterRole.Rules has no validation
-	// field ClusterRole.AggregationRule has no validation
+
+	// field ClusterRole.AggregationRule
+	errs = append(errs,
+		func(fldPath *field.Path, obj, oldObj *AggregationRule, oldValueCorrelated bool) (errs field.ErrorList) {
+			// don't revalidate unchanged data
+			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+				return nil
+			}
+			// call field-attached validations
+			earlyReturn := false
+			if e := validate.OptionalPointer(ctx, op, fldPath, obj, oldObj); len(e) != 0 {
+				earlyReturn = true
+			}
+			if earlyReturn {
+				return // do not proceed
+			}
+			// call the type's validation function
+			errs = append(errs, Validate_AggregationRule(ctx, op, fldPath, obj, oldObj)...)
+			return
+		}(fldPath.Child("aggregationRule"), obj.AggregationRule, safe.Field(oldObj, func(oldObj *ClusterRole) *AggregationRule { return oldObj.AggregationRule }), oldObj != nil)...)
+
 	return errs
 }
 

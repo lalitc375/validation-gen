@@ -76,6 +76,24 @@ func testDeclarativeValidateForDeclarative(t *testing.T, apiVersion string) {
 				field.Required(field.NewPath("metadata", "name"), ""),
 			},
 		},
+		"invalid aggregation rule": {
+			input: mkClusterRole(func(cr *rbac.ClusterRole) {
+				cr.AggregationRule = &rbac.AggregationRule{}
+			}),
+			expectedErrs: field.ErrorList{
+				field.Required(field.NewPath("aggregationRule", "clusterRoleSelectors"), ""),
+			},
+		},
+		"valid aggregation rule": {
+			input: mkClusterRole(func(cr *rbac.ClusterRole) {
+				cr.AggregationRule = &rbac.AggregationRule{
+					ClusterRoleSelectors: []metav1.LabelSelector{
+						{MatchLabels: map[string]string{"foo": "bar"}},
+					},
+				}
+			}),
+			expectedErrs: nil,
+		},
 	}
 	for k, tc := range testCases {
 		t.Run(k, func(t *testing.T) {

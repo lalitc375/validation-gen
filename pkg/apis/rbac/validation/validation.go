@@ -79,7 +79,7 @@ func ValidateClusterRole(role *rbac.ClusterRole, opts ClusterRoleValidationOptio
 
 	if role.AggregationRule != nil {
 		if len(role.AggregationRule.ClusterRoleSelectors) == 0 {
-			allErrs = append(allErrs, field.Required(field.NewPath("aggregationRule", "clusterRoleSelectors"), "at least one clusterRoleSelector required if aggregationRule is non-nil"))
+			allErrs = append(allErrs, field.Required(field.NewPath("aggregationRule", "clusterRoleSelectors"), "").MarkCoveredByDeclarative())
 		}
 		for i, selector := range role.AggregationRule.ClusterRoleSelectors {
 			fieldPath := field.NewPath("aggregationRule", "clusterRoleSelectors").Index(i)

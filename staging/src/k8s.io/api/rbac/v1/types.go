@@ -200,6 +200,7 @@ type ClusterRole struct {
 	// If AggregationRule is set, then the Rules are controller managed and direct changes to Rules will be
 	// stomped by the controller.
 	// +optional
+	// +k8s:optional
 	AggregationRule *AggregationRule `json:"aggregationRule,omitempty" protobuf:"bytes,3,opt,name=aggregationRule"`
 }
 
@@ -209,6 +210,7 @@ type AggregationRule struct {
 	// If any of the selectors match, then the ClusterRole's permissions will be added
 	// +optional
 	// +listType=atomic
+	// +k8s:required
 	ClusterRoleSelectors []metav1.LabelSelector `json:"clusterRoleSelectors,omitempty" protobuf:"bytes,1,rep,name=clusterRoleSelectors"`
 }
 
