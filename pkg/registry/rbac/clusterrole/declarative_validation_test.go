@@ -39,7 +39,9 @@ func mkClusterRole(tweak func(*rbac.ClusterRole)) rbac.ClusterRole {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "valid-name",
 		},
-		// Rules are not required in this commit yet (handwritten logic doesn't enforce it)
+		Rules: []rbac.PolicyRule{
+			{Verbs: []string{"get"}, APIGroups: []string{""}, Resources: []string{"pods"}},
+		},
 	}
 	if tweak != nil {
 		tweak(&cr)
@@ -65,7 +67,7 @@ func testDeclarativeValidateForDeclarative(t *testing.T, apiVersion string) {
 				cr.ObjectMeta.Name = "InvalidName"
 			}),
 			expectedErrs: field.ErrorList{
-				field.Invalid(field.NewPath("metadata", "name"), "InvalidName", "a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')").WithOrigin("format=k8s-long-name"),
+				field.Invalid(field.NewPath("metadata", "name"), "InvalidName", "a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')").WithOrigin("format=k8s-long-name"),
 			},
 		},
 		"empty name": {
@@ -74,6 +76,14 @@ func testDeclarativeValidateForDeclarative(t *testing.T, apiVersion string) {
 			}),
 			expectedErrs: field.ErrorList{
 				field.Required(field.NewPath("metadata", "name"), ""),
+			},
+		},
+		"empty rules": {
+			input: mkClusterRole(func(cr *rbac.ClusterRole) {
+				cr.Rules = nil
+			}),
+			expectedErrs: field.ErrorList{
+				field.Required(field.NewPath("rules"), ""),
 			},
 		},
 		"invalid aggregation rule": {

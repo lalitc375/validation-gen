@@ -61,12 +61,25 @@ type ClusterRoleValidationOptions struct {
 
 func ValidateClusterRole(role *rbac.ClusterRole, opts ClusterRoleValidationOptions) field.ErrorList {
 	allErrs := field.ErrorList{}
-	allErrs = append(allErrs, validation.ValidateObjectMeta(&role.ObjectMeta, false, ValidateRBACName, field.NewPath("metadata"))...)
+	metaErrs := validation.ValidateObjectMeta(&role.ObjectMeta, false, ValidateRBACName, field.NewPath("metadata"))
+	for _, err := range metaErrs {
+		if err.Field == "metadata.name" {
+			if err.Type == field.ErrorTypeRequired {
+				err.Detail = ""
+			}
+			err.MarkCoveredByDeclarative()
+		}
+		allErrs = append(allErrs, err)
+	}
 
 	if len(role.ObjectMeta.Name) > 0 {
 		for _, err := range validation.ValidateDNS1123Subdomain(role.ObjectMeta.Name, field.NewPath("metadata", "name")) {
 			allErrs = append(allErrs, err.WithOrigin("format=k8s-long-name").MarkCoveredByDeclarative())
 		}
+	}
+
+	if len(role.Rules) == 0 {
+		allErrs = append(allErrs, field.Required(field.NewPath("rules"), "").MarkCoveredByDeclarative())
 	}
 
 	for i, rule := range role.Rules {

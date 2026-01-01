@@ -192,6 +192,7 @@ type ClusterRole struct {
 	// Rules holds all the PolicyRules for this ClusterRole
 	// +optional
 	// +listType=atomic
+	// +k8s:required
 	Rules []PolicyRule `json:"rules" protobuf:"bytes,2,rep,name=rules"`
 
 	// AggregationRule is an optional field that describes how to build the Rules for this ClusterRole.

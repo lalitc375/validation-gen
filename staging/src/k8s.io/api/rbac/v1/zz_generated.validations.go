@@ -142,7 +142,24 @@ func Validate_ClusterRole(ctx context.Context, op operation.Operation, fldPath *
 			return
 		}(fldPath.Child("metadata"), &obj.ObjectMeta, safe.Field(oldObj, func(oldObj *ClusterRole) *metav1.ObjectMeta { return &oldObj.ObjectMeta }), oldObj != nil)...)
 
-	// field ClusterRole.Rules has no validation
+	// field ClusterRole.Rules
+	errs = append(errs,
+		func(fldPath *field.Path, obj, oldObj []PolicyRule, oldValueCorrelated bool) (errs field.ErrorList) {
+			// don't revalidate unchanged data
+			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+				return nil
+			}
+			// call field-attached validations
+			earlyReturn := false
+			if e := validate.RequiredSlice(ctx, op, fldPath, obj, oldObj); len(e) != 0 {
+				errs = append(errs, e...)
+				earlyReturn = true
+			}
+			if earlyReturn {
+				return // do not proceed
+			}
+			return
+		}(fldPath.Child("rules"), obj.Rules, safe.Field(oldObj, func(oldObj *ClusterRole) []PolicyRule { return oldObj.Rules }), oldObj != nil)...)
 
 	// field ClusterRole.AggregationRule
 	errs = append(errs,
