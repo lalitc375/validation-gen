@@ -29,6 +29,7 @@ import (
 	operation "k8s.io/apimachinery/pkg/api/operation"
 	safe "k8s.io/apimachinery/pkg/api/safe"
 	validate "k8s.io/apimachinery/pkg/api/validate"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	field "k8s.io/apimachinery/pkg/util/validation/field"
 )
@@ -38,6 +39,14 @@ func init() { localSchemeBuilder.Register(RegisterValidations) }
 // RegisterValidations adds validation functions to the given scheme.
 // Public to allow building arbitrary schemes.
 func RegisterValidations(scheme *runtime.Scheme) error {
+	// type ClusterRole
+	scheme.AddValidationFunc((*ClusterRole)(nil), func(ctx context.Context, op operation.Operation, obj, oldObj interface{}) field.ErrorList {
+		switch op.Request.SubresourcePath() {
+		case "/":
+			return Validate_ClusterRole(ctx, op, nil /* fldPath */, obj.(*ClusterRole), safe.Cast[*ClusterRole](oldObj))
+		}
+		return field.ErrorList{field.InternalError(nil, fmt.Errorf("no validation found for %T, subresource: %v", obj, op.Request.SubresourcePath()))}
+	})
 	// type ClusterRoleBinding
 	scheme.AddValidationFunc((*ClusterRoleBinding)(nil), func(ctx context.Context, op operation.Operation, obj, oldObj interface{}) field.ErrorList {
 		switch op.Request.SubresourcePath() {
@@ -51,6 +60,14 @@ func RegisterValidations(scheme *runtime.Scheme) error {
 		switch op.Request.SubresourcePath() {
 		case "/":
 			return Validate_ClusterRoleBindingList(ctx, op, nil /* fldPath */, obj.(*ClusterRoleBindingList), safe.Cast[*ClusterRoleBindingList](oldObj))
+		}
+		return field.ErrorList{field.InternalError(nil, fmt.Errorf("no validation found for %T, subresource: %v", obj, op.Request.SubresourcePath()))}
+	})
+	// type ClusterRoleList
+	scheme.AddValidationFunc((*ClusterRoleList)(nil), func(ctx context.Context, op operation.Operation, obj, oldObj interface{}) field.ErrorList {
+		switch op.Request.SubresourcePath() {
+		case "/":
+			return Validate_ClusterRoleList(ctx, op, nil /* fldPath */, obj.(*ClusterRoleList), safe.Cast[*ClusterRoleList](oldObj))
 		}
 		return field.ErrorList{field.InternalError(nil, fmt.Errorf("no validation found for %T, subresource: %v", obj, op.Request.SubresourcePath()))}
 	})
@@ -71,6 +88,38 @@ func RegisterValidations(scheme *runtime.Scheme) error {
 		return field.ErrorList{field.InternalError(nil, fmt.Errorf("no validation found for %T, subresource: %v", obj, op.Request.SubresourcePath()))}
 	})
 	return nil
+}
+
+// Validate_ClusterRole validates an instance of ClusterRole according
+// to declarative validation rules in the API schema.
+func Validate_ClusterRole(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *ClusterRole) (errs field.ErrorList) {
+	// field ClusterRole.TypeMeta has no validation
+
+	// field ClusterRole.ObjectMeta
+	errs = append(errs,
+		func(fldPath *field.Path, obj, oldObj *v1.ObjectMeta, oldValueCorrelated bool) (errs field.ErrorList) {
+			// don't revalidate unchanged data
+			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+				return nil
+			}
+			// call field-attached validations
+			func() { // cohort name
+				earlyReturn := false
+				if e := validate.Subfield(ctx, op, fldPath, obj, oldObj, "name", func(o *v1.ObjectMeta) *string { return &o.Name }, validate.DirectEqualPtr, validate.RequiredValue); len(e) != 0 {
+					errs = append(errs, e...)
+					earlyReturn = true
+				}
+				if earlyReturn {
+					return // do not proceed
+				}
+				errs = append(errs, validate.Subfield(ctx, op, fldPath, obj, oldObj, "name", func(o *v1.ObjectMeta) *string { return &o.Name }, validate.DirectEqualPtr, validate.LongName)...)
+			}()
+			return
+		}(fldPath.Child("metadata"), &obj.ObjectMeta, safe.Field(oldObj, func(oldObj *ClusterRole) *v1.ObjectMeta { return &oldObj.ObjectMeta }), oldObj != nil)...)
+
+	// field ClusterRole.Rules has no validation
+	// field ClusterRole.AggregationRule has no validation
+	return errs
 }
 
 // Validate_ClusterRoleBinding validates an instance of ClusterRoleBinding according
@@ -123,6 +172,27 @@ func Validate_ClusterRoleBindingList(ctx context.Context, op operation.Operation
 			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, Validate_ClusterRoleBinding)...)
 			return
 		}(fldPath.Child("items"), obj.Items, safe.Field(oldObj, func(oldObj *ClusterRoleBindingList) []ClusterRoleBinding { return oldObj.Items }), oldObj != nil)...)
+
+	return errs
+}
+
+// Validate_ClusterRoleList validates an instance of ClusterRoleList according
+// to declarative validation rules in the API schema.
+func Validate_ClusterRoleList(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *ClusterRoleList) (errs field.ErrorList) {
+	// field ClusterRoleList.TypeMeta has no validation
+	// field ClusterRoleList.ListMeta has no validation
+
+	// field ClusterRoleList.Items
+	errs = append(errs,
+		func(fldPath *field.Path, obj, oldObj []ClusterRole, oldValueCorrelated bool) (errs field.ErrorList) {
+			// don't revalidate unchanged data
+			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+				return nil
+			}
+			// iterate the list and call the type's validation function
+			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, Validate_ClusterRole)...)
+			return
+		}(fldPath.Child("items"), obj.Items, safe.Field(oldObj, func(oldObj *ClusterRoleList) []ClusterRole { return oldObj.Items }), oldObj != nil)...)
 
 	return errs
 }

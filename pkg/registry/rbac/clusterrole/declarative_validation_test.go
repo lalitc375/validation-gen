@@ -19,6 +19,7 @@ package clusterrole
 import (
 	"testing"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	genericapirequest "k8s.io/apiserver/pkg/endpoints/request"
 	apitesting "k8s.io/kubernetes/pkg/api/testing"
@@ -33,6 +34,19 @@ func TestDeclarativeValidateForDeclarative(t *testing.T) {
 	}
 }
 
+func mkClusterRole(tweak func(*rbac.ClusterRole)) rbac.ClusterRole {
+	cr := rbac.ClusterRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "valid-name",
+		},
+		// Rules are not required in this commit yet (handwritten logic doesn't enforce it)
+	}
+	if tweak != nil {
+		tweak(&cr)
+	}
+	return cr
+}
+
 func testDeclarativeValidateForDeclarative(t *testing.T, apiVersion string) {
 	ctx := genericapirequest.WithRequestInfo(genericapirequest.NewDefaultContext(), &genericapirequest.RequestInfo{
 		APIGroup:   "rbac.authorization.k8s.io",
@@ -42,7 +56,26 @@ func testDeclarativeValidateForDeclarative(t *testing.T, apiVersion string) {
 		input        rbac.ClusterRole
 		expectedErrs field.ErrorList
 	}{
-		// TODO: Add more test cases
+		"valid": {
+			input:        mkClusterRole(nil),
+			expectedErrs: nil,
+		},
+		"invalid name": {
+			input: mkClusterRole(func(cr *rbac.ClusterRole) {
+				cr.ObjectMeta.Name = "InvalidName"
+			}),
+			expectedErrs: field.ErrorList{
+				field.Invalid(field.NewPath("metadata", "name"), "InvalidName", "a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')").WithOrigin("format=k8s-long-name"),
+			},
+		},
+		"empty name": {
+			input: mkClusterRole(func(cr *rbac.ClusterRole) {
+				cr.ObjectMeta.Name = ""
+			}),
+			expectedErrs: field.ErrorList{
+				field.Required(field.NewPath("metadata", "name"), ""),
+			},
+		},
 	}
 	for k, tc := range testCases {
 		t.Run(k, func(t *testing.T) {

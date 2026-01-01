@@ -63,6 +63,12 @@ func ValidateClusterRole(role *rbac.ClusterRole, opts ClusterRoleValidationOptio
 	allErrs := field.ErrorList{}
 	allErrs = append(allErrs, validation.ValidateObjectMeta(&role.ObjectMeta, false, ValidateRBACName, field.NewPath("metadata"))...)
 
+	if len(role.ObjectMeta.Name) > 0 {
+		for _, err := range validation.ValidateDNS1123Subdomain(role.ObjectMeta.Name, field.NewPath("metadata", "name")) {
+			allErrs = append(allErrs, err.WithOrigin("format=k8s-long-name").MarkCoveredByDeclarative())
+		}
+	}
+
 	for i, rule := range role.Rules {
 		if err := ValidatePolicyRule(rule, false, field.NewPath("rules").Index(i)); err != nil {
 			allErrs = append(allErrs, err...)
