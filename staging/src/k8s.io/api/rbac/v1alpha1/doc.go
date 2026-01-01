@@ -16,6 +16,7 @@ limitations under the License.
 
 // +k8s:deepcopy-gen=package
 // +k8s:protobuf-gen=package
+// +k8s:validation-gen=TypeMeta
 // +k8s:openapi-gen=true
 // +k8s:openapi-model-package=io.k8s.api.rbac.v1alpha1
 
