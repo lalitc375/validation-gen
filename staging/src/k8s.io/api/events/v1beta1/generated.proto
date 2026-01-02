@@ -51,6 +51,7 @@ message Event {
   // reportingController is the name of the controller that emitted this Event, e.g. `kubernetes.io/kubelet`.
   // This field cannot be empty for new Events.
   // +optional
+  // +k8s:format=k8s-label-key
   optional string reportingController = 4;
 
   // reportingInstance is the ID of the controller instance, e.g. `kubelet-xyzf`.

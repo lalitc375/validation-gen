@@ -41,6 +41,8 @@ message AggregationRule {
 message ClusterRole {
   // Standard object's metadata.
   // +optional
+  // +k8s:subfield(name)=+k8s:required
+  // +k8s:subfield(name)=+k8s:format=k8s-long-name
   optional .k8s.io.apimachinery.pkg.apis.meta.v1.ObjectMeta metadata = 1;
 
   // Rules holds all the PolicyRules for this ClusterRole
