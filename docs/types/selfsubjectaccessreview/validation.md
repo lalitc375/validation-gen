@@ -4,8 +4,8 @@
 | :--- | :--- | :--- | :--- |
 | `metadata` | `metav1.ObjectMeta` | `+k8s:empty` | Metadata must be empty for SelfSubjectAccessReview. |
 | `spec` | `SelfSubjectAccessReviewSpec` | `+k8s:required` | Mandatory specification of the access request being evaluated. |
-| `spec.resourceAttributes` | `*ResourceAttributes` | `+k8s:optional` | Optional information for a resource access request. Mutually exclusive with `nonResourceAttributes`. |
-| `spec.nonResourceAttributes` | `*NonResourceAttributes` | `+k8s:optional` | Optional information for a non-resource access request. Mutually exclusive with `resourceAttributes`. |
+| `spec.resourceAttributes` | `*ResourceAttributes` | `+k8s:unionMember`<br/>`+k8s:optional` | Optional information for a resource access request. Mutually exclusive with `nonResourceAttributes`. |
+| `spec.nonResourceAttributes` | `*NonResourceAttributes` | `+k8s:unionMember`<br/>`+k8s:optional` | Optional information for a non-resource access request. Mutually exclusive with `resourceAttributes`. |
 
 ### ResourceAttributes
 

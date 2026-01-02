@@ -15,5 +15,9 @@
 | `spec.backoffLimitPerIndex` | `*int32` | `+k8s:optional`<br>`+k8s:minimum=0`<br>`+k8s:immutable` | Optional limit for retries within an index. Only for `Indexed` completion mode. |
 | `spec.maxFailedIndexes` | `*int32` | `+k8s:optional`<br>`+k8s:minimum=0` | Optional maximal number of failed indexes before marking the Job as failed. Requires `backoffLimitPerIndex`. |
 | `spec.podFailurePolicy` | `*PodFailurePolicy` | `+k8s:optional` | Optional policy for handling failed pods. |
+| `spec.podFailurePolicy.rules` | `[]PodFailurePolicyRule` | `+k8s:required`<br/>`+k8s:maxItems=20` | Mandatory list of failure policy rules. |
+| `spec.podFailurePolicy.rules[].onPodConditions` | `[]PodFailurePolicyOnPodConditionsPattern` | `+k8s:required`<br/>`+k8s:maxItems=20` | Mandatory list of pod conditions. |
+| `spec.podFailurePolicy.rules[].onExitCodes.values` | `[]int32` | `+k8s:required`<br/>`+k8s:maxItems=255` | Mandatory list of exit codes. |
 | `spec.successPolicy` | `*SuccessPolicy` | `+k8s:optional`<br>`+k8s:immutable` | Optional policy for declaring Job success. Only for `Indexed` Jobs. |
+| `spec.successPolicy.rules` | `[]SuccessPolicyRule` | `+k8s:required`<br/>`+k8s:maxItems=20` | Mandatory list of success policy rules. |
 | `spec.managedBy` | `*string` | `+k8s:optional`<br>`+k8s:maxLength=63` | Optional name of the controller that manages this job. |

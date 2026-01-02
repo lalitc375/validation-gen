@@ -6,6 +6,8 @@
 | `webhooks` | `[]ValidatingWebhook` | `+k8s:optional` | List of webhooks and the affected resources and operations. |
 | `webhooks[].name` | `string` | `+k8s:required` | Mandatory fully qualified name of the admission webhook. |
 | `webhooks[].clientConfig` | `WebhookClientConfig` | `+k8s:required` | Mandatory instructions for how to communicate with the hook. Exactly one of `url` or `service` must be set. |
+| `webhooks[].clientConfig.url` | `*string` | `+k8s:unionMember`<br/>`+k8s:optional` | Optional URL. Mutually exclusive with `service`. |
+| `webhooks[].clientConfig.service` | `*ServiceReference` | `+k8s:unionMember`<br/>`+k8s:optional` | Optional service reference. Mutually exclusive with `url`. |
 | `webhooks[].rules` | `[]RuleWithOperations` | `+k8s:optional` | Optional list of operations on what resources/subresources the webhook cares about. |
 | `webhooks[].failurePolicy` | `*FailurePolicyType` | `+k8s:optional`<br>`+k8s:enum=["Ignore", "Fail"]` | Optional failure policy. Defaults to `Ignore`. |
 | `webhooks[].matchPolicy` | `*MatchPolicyType` | `+k8s:optional`<br>`+k8s:enum=["Exact", "Equivalent"]` | Optional match policy. Defaults to `Exact`. |

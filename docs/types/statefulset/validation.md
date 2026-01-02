@@ -11,5 +11,6 @@
 | `spec.updateStrategy.type` | `StatefulSetUpdateStrategyType` | `+k8s:optional`<br>`+k8s:enum=["RollingUpdate", "OnDelete"]` | Optional strategy for updates. Defaults to `RollingUpdate`. |
 | `spec.updateStrategy.rollingUpdate.partition` | `int32` | `+k8s:optional`<br>`+k8s:minimum=0` | Optional ordinal at which the set should be partitioned for updates. |
 | `spec.volumeClaimTemplates` | `[]PersistentVolumeClaim` | `+k8s:optional` | Optional list of claims that pods are allowed to reference. |
+| `spec.ordinals.start` | `int32` | `+k8s:optional`<br>`+k8s:minimum=0` | Optional start ordinal. Defaults to 0. |
 | `spec.minReadySeconds` | `int32` | `+k8s:optional`<br>`+k8s:minimum=0` | Optional minimum seconds for which a pod should be ready. |
 | `spec.revisionHistoryLimit` | `*int32` | `+k8s:optional`<br>`+k8s:minimum=0` | Optional max revisions to maintain. Defaults to 10. |
