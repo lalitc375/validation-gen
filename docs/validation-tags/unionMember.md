@@ -3,15 +3,19 @@
 ## Description
 Marks a field as a member of a union. This tag is used in conjunction with `+k8s:unionDiscriminator` to define a discriminated union, where only one member field can be set at a time based on the value of a discriminator field.
 
+It can also be used without `+k8s:unionDiscriminator` to define an undiscriminated union, where exactly one member field must be set.
+
 ## Scope
-`Field`
+`Field`, `ListVal`
 
 ## Supported Go Types
 Any Go type. The tag indicates that this field is one of the possible choices in a union.
 
+Fields marked with `+k8s:unionMember` must also be marked with `+k8s:optional`.
+
 ## Arguments
 *   `union=<name>` (optional): Specifies the name of the union if a struct contains multiple unions.
-*   `memberName=<value>` (optional, defaults to field name): Specifies the value of the discriminator field that activates this union member. If omitted, the JSON field name is used.
+*   `memberName=<value>` (optional, defaults to Go field name): Specifies the value of the discriminator field that activates this union member. If omitted, the Go field name is used.
 
 ## Stability
 **Stable**
@@ -47,6 +51,17 @@ type MemberType1 struct { /* ... */ }
 type MemberType2 struct { /* ... */ }
 ```
 When `D` is `M1`, only `M1` is allowed to be set (non-nil). If `D` is `M2`, only `M2` is allowed.
+
+### List Item
+```go
+type MyListUnionStruct struct {
+    // +k8s:listType=atomic
+    // +k8s:item(type="a")=+k8s:unionMember
+    // +k8s:item(type="b")=+k8s:unionMember
+    Items []UnionItem `json:"items"`
+}
+```
+This defines a union where the list can only contain items that satisfy one of the member conditions.
 
 ## Migrating from Handwritten Validation
 
@@ -96,8 +111,8 @@ Constants are typically used to define the possible values for the discriminator
 **File:** `pkg/apis/example/v1/types.go`
 ```go
 const (
-    ConfigTypeHTTP string = "HTTP"
-    ConfigTypeFile string = "File"
+    ConfigTypeHTTP string = "HTTPConfig" // Matches field name
+    ConfigTypeFile string = "FileConfig" // Matches field name
 )
 ```
 
@@ -166,10 +181,12 @@ type ProtocolConfig struct {
     // +k8s:unionMember
     Type string `json:"type"`
 
-    // +k8s:unionMember(discriminator="TCP")
+    // +k8s:unionMember(memberName="TCP")
+    // +k8s:optional
     TCP *TCPConfig `json:"tcp,omitempty"`
 
-    // +k8s:unionMember(discriminator="UDP")
+    // +k8s:unionMember(memberName="UDP")
+    // +k8s:optional
     UDP *UDPConfig `json:"udp,omitempty"`
 }
 
