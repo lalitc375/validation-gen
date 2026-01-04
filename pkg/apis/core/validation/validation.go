@@ -7459,7 +7459,22 @@ func ValidateLimitRange(limitRange *core.LimitRange) field.ErrorList {
 // ValidateServiceAccount tests if required fields in the ServiceAccount are set.
 func ValidateServiceAccount(serviceAccount *core.ServiceAccount) field.ErrorList {
 	allErrs := ValidateObjectMeta(&serviceAccount.ObjectMeta, true, ValidateServiceAccountName, field.NewPath("metadata"))
-	return allErrs
+	filteredErrs := field.ErrorList{}
+	for _, err := range allErrs {
+		if err.Field == "metadata.name" {
+			if err.Type == field.ErrorTypeRequired {
+				filteredErrs = append(filteredErrs, field.Required(field.NewPath("metadata", "name"), "").MarkCoveredByDeclarative())
+				continue
+			}
+			if err.Type == field.ErrorTypeInvalid {
+				msg := "a lowercase RFC 1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')"
+				filteredErrs = append(filteredErrs, field.Invalid(field.NewPath("metadata", "name"), err.BadValue, msg).WithOrigin("format=k8s-long-name").MarkCoveredByDeclarative())
+				continue
+			}
+		}
+		filteredErrs = append(filteredErrs, err)
+	}
+	return filteredErrs
 }
 
 // ValidateServiceAccountUpdate tests if required fields in the ServiceAccount are set.
