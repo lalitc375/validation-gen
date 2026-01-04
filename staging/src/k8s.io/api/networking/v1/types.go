@@ -170,6 +170,8 @@ type NetworkPolicyPort struct {
 	// is not defined or if the port field is defined as a named (string) port.
 	// The endPort must be equal or greater than port.
 	// +optional
+	// +k8s:minimum=1
+	// +k8s:maximum=65535
 	EndPort *int32 `json:"endPort,omitempty" protobuf:"bytes,3,opt,name=endPort"`
 }
 

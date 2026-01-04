@@ -82,8 +82,11 @@ func ValidateNetworkPolicyPort(port *networking.NetworkPolicyPort, portPath *fie
 				if *port.EndPort < port.Port.IntVal {
 					allErrs = append(allErrs, field.Invalid(portPath.Child("endPort"), port.Port.IntVal, "must be greater than or equal to `port`"))
 				}
-				for _, msg := range validation.IsValidPortNum(int(*port.EndPort)) {
-					allErrs = append(allErrs, field.Invalid(portPath.Child("endPort"), *port.EndPort, msg))
+				if *port.EndPort < 1 {
+					allErrs = append(allErrs, field.Invalid(portPath.Child("endPort"), *port.EndPort, "must be greater than or equal to 1").MarkCoveredByDeclarative().WithOrigin("minimum"))
+				}
+				if *port.EndPort > 65535 {
+					allErrs = append(allErrs, field.Invalid(portPath.Child("endPort"), *port.EndPort, "must be less than or equal to 65535").MarkCoveredByDeclarative().WithOrigin("maximum"))
 				}
 			}
 		} else {

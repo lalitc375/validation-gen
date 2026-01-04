@@ -128,7 +128,17 @@ func Validate_NetworkPolicy(ctx context.Context, op operation.Operation, fldPath
 // Validate_NetworkPolicyEgressRule validates an instance of NetworkPolicyEgressRule according
 // to declarative validation rules in the API schema.
 func Validate_NetworkPolicyEgressRule(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *NetworkPolicyEgressRule) (errs field.ErrorList) {
-	// field NetworkPolicyEgressRule.Ports has no validation
+	// field NetworkPolicyEgressRule.Ports
+	errs = append(errs,
+		func(fldPath *field.Path, obj, oldObj []NetworkPolicyPort, oldValueCorrelated bool) (errs field.ErrorList) {
+			// don't revalidate unchanged data
+			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+				return nil
+			}
+			// iterate the list and call the type's validation function
+			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, Validate_NetworkPolicyPort)...)
+			return
+		}(fldPath.Child("ports"), obj.Ports, safe.Field(oldObj, func(oldObj *NetworkPolicyEgressRule) []NetworkPolicyPort { return oldObj.Ports }), oldObj != nil)...)
 
 	// field NetworkPolicyEgressRule.To
 	errs = append(errs,
@@ -148,7 +158,17 @@ func Validate_NetworkPolicyEgressRule(ctx context.Context, op operation.Operatio
 // Validate_NetworkPolicyIngressRule validates an instance of NetworkPolicyIngressRule according
 // to declarative validation rules in the API schema.
 func Validate_NetworkPolicyIngressRule(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *NetworkPolicyIngressRule) (errs field.ErrorList) {
-	// field NetworkPolicyIngressRule.Ports has no validation
+	// field NetworkPolicyIngressRule.Ports
+	errs = append(errs,
+		func(fldPath *field.Path, obj, oldObj []NetworkPolicyPort, oldValueCorrelated bool) (errs field.ErrorList) {
+			// don't revalidate unchanged data
+			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+				return nil
+			}
+			// iterate the list and call the type's validation function
+			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, Validate_NetworkPolicyPort)...)
+			return
+		}(fldPath.Child("ports"), obj.Ports, safe.Field(oldObj, func(oldObj *NetworkPolicyIngressRule) []NetworkPolicyPort { return oldObj.Ports }), oldObj != nil)...)
 
 	// field NetworkPolicyIngressRule.From
 	errs = append(errs,
@@ -203,6 +223,28 @@ func Validate_NetworkPolicyPeer(ctx context.Context, op operation.Operation, fld
 			errs = append(errs, Validate_IPBlock(ctx, op, fldPath, obj, oldObj)...)
 			return
 		}(fldPath.Child("ipBlock"), obj.IPBlock, safe.Field(oldObj, func(oldObj *NetworkPolicyPeer) *IPBlock { return oldObj.IPBlock }), oldObj != nil)...)
+
+	return errs
+}
+
+// Validate_NetworkPolicyPort validates an instance of NetworkPolicyPort according
+// to declarative validation rules in the API schema.
+func Validate_NetworkPolicyPort(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *NetworkPolicyPort) (errs field.ErrorList) {
+	// field NetworkPolicyPort.Protocol has no validation
+	// field NetworkPolicyPort.Port has no validation
+
+	// field NetworkPolicyPort.EndPort
+	errs = append(errs,
+		func(fldPath *field.Path, obj, oldObj *int32, oldValueCorrelated bool) (errs field.ErrorList) {
+			// don't revalidate unchanged data
+			if oldValueCorrelated && op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
+				return nil
+			}
+			// call field-attached validations
+			errs = append(errs, validate.Maximum(ctx, op, fldPath, obj, oldObj, 65535)...)
+			errs = append(errs, validate.Minimum(ctx, op, fldPath, obj, oldObj, 1)...)
+			return
+		}(fldPath.Child("endPort"), obj.EndPort, safe.Field(oldObj, func(oldObj *NetworkPolicyPort) *int32 { return oldObj.EndPort }), oldObj != nil)...)
 
 	return errs
 }

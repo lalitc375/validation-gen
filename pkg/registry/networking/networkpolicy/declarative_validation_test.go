@@ -22,10 +22,12 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/apiserver/pkg/endpoints/request"
 	apitesting "k8s.io/kubernetes/pkg/api/testing"
 	"k8s.io/kubernetes/pkg/apis/networking"
+	"k8s.io/utils/ptr"
 )
 
 func TestDeclarativeValidation(t *testing.T) {
@@ -139,6 +141,27 @@ func TestDeclarativeValidation(t *testing.T) {
 			},
 			expectedErrs: field.ErrorList{
 				field.NotSupported(field.NewPath("spec", "policyTypes").Index(0), networking.PolicyType("Invalid"), []string{"Ingress", "Egress"}),
+			},
+		},
+		{
+			name: "invalid EndPort",
+			obj: &networking.NetworkPolicy{
+				ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "bar"},
+				Spec: networking.NetworkPolicySpec{
+					Ingress: []networking.NetworkPolicyIngressRule{
+						{
+							Ports: []networking.NetworkPolicyPort{
+								{
+									Port:    &intstr.IntOrString{Type: intstr.Int, IntVal: 80},
+									EndPort: ptr.To(int32(70000)),
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedErrs: field.ErrorList{
+				field.Invalid(field.NewPath("spec", "ingress").Index(0).Child("ports").Index(0).Child("endPort"), int32(70000), "must be less than or equal to 65535").WithOrigin("maximum"),
 			},
 		},
 	}
