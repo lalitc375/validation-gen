@@ -19,6 +19,7 @@ package servicecidr
 import (
 	"context"
 
+	"k8s.io/apimachinery/pkg/api/operation"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -81,8 +82,8 @@ func (serviceCIDRStrategy) PrepareForUpdate(ctx context.Context, obj, old runtim
 // Validate validates a new ServiceCIDR.
 func (serviceCIDRStrategy) Validate(ctx context.Context, obj runtime.Object) field.ErrorList {
 	cidrConfig := obj.(*networking.ServiceCIDR)
-	err := validation.ValidateServiceCIDR(cidrConfig)
-	return err
+	errs := validation.ValidateServiceCIDR(cidrConfig)
+	return rest.ValidateDeclarativelyWithMigrationChecks(ctx, legacyscheme.Scheme, obj, nil, errs, operation.Create)
 }
 
 // Canonicalize normalizes the object after validation.
@@ -104,7 +105,7 @@ func (serviceCIDRStrategy) ValidateUpdate(ctx context.Context, new, old runtime.
 	newServiceCIDR := new.(*networking.ServiceCIDR)
 	oldServiceCIDR := old.(*networking.ServiceCIDR)
 	errList := validation.ValidateServiceCIDRUpdate(newServiceCIDR, oldServiceCIDR)
-	return errList
+	return rest.ValidateDeclarativelyWithMigrationChecks(ctx, legacyscheme.Scheme, new, old, errList, operation.Update)
 }
 
 // AllowUnconditionalUpdate is the default update policy for ServiceCIDR objects.

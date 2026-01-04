@@ -116,6 +116,8 @@ message IPAddressSpec {
 message IPBlock {
   // cidr is a string representing the IPBlock
   // Valid examples are "192.168.1.0/24" or "2001:db8::/64"
+  // +k8s:required
+  // +k8s:format=k8s-cidr
   optional string cidr = 1;
 
   // except is a slice of CIDRs that should not be included within an IPBlock
@@ -123,6 +125,7 @@ message IPBlock {
   // Except values will be rejected if they are outside the cidr range
   // +optional
   // +listType=atomic
+  // +k8s:eachVal=+k8s:format=k8s-cidr
   repeated string except = 2;
 }
 
@@ -528,6 +531,8 @@ message NetworkPolicyPort {
   // is not defined or if the port field is defined as a named (string) port.
   // The endPort must be equal or greater than port.
   // +optional
+  // +k8s:minimum=1
+  // +k8s:maximum=65535
   optional int32 endPort = 3;
 }
 
@@ -576,6 +581,7 @@ message NetworkPolicySpec {
   // This field is beta-level in 1.8
   // +optional
   // +listType=atomic
+  // +k8s:maxItems=2
   repeated string policyTypes = 4;
 }
 
@@ -618,6 +624,8 @@ message ServiceCIDR {
   // Standard object's metadata.
   // More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
   // +optional
+  // +k8s:subfield(name)=+k8s:required
+  // +k8s:subfield(name)=+k8s:format=k8s-long-name
   optional .k8s.io.apimachinery.pkg.apis.meta.v1.ObjectMeta metadata = 1;
 
   // spec is the desired state of the ServiceCIDR.
@@ -648,6 +656,10 @@ message ServiceCIDRSpec {
   // from which to assign service cluster IPs. Max of two CIDRs is allowed, one of each IP family.
   // This field is immutable.
   // +optional
+  // +k8s:required
+  // +k8s:minItems=1
+  // +k8s:maxItems=2
+  // +k8s:eachVal=+k8s:format=k8s-cidr
   // +listType=atomic
   repeated string cidrs = 1;
 }

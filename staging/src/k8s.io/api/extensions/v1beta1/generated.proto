@@ -428,6 +428,8 @@ message HTTPIngressRuleValue {
 message IPBlock {
   // CIDR is a string representing the IP Block
   // Valid examples are "192.168.1.0/24" or "2001:db8::/64"
+  // +k8s:required
+  // +k8s:format=k8s-cidr
   optional string cidr = 1;
 
   // Except is a slice of CIDRs that should not be included within an IP Block
@@ -435,6 +437,7 @@ message IPBlock {
   // Except values will be rejected if they are outside the CIDR range
   // +optional
   // +listType=atomic
+  // +k8s:eachVal=+k8s:format=k8s-cidr
   repeated string except = 2;
 }
 
@@ -768,6 +771,8 @@ message NetworkPolicyPort {
   // is not defined or if the port field is defined as a named (string) port.
   // The endPort must be equal or greater than port.
   // +optional
+  // +k8s:minimum=1
+  // +k8s:maximum=65535
   optional int32 endPort = 3;
 }
 
@@ -814,6 +819,7 @@ message NetworkPolicySpec {
   // This field is beta-level in 1.8
   // +optional
   // +listType=atomic
+  // +k8s:maxItems=2
   repeated string policyTypes = 4;
 }
 

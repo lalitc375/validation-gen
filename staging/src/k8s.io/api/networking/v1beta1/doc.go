@@ -19,7 +19,8 @@ limitations under the License.
 // +k8s:openapi-gen=true
 // +k8s:prerelease-lifecycle-gen=true
 // +k8s:openapi-model-package=io.k8s.api.networking.v1beta1
-
+// +k8s:validation-gen=TypeMeta
+// +k8s:validation-gen-input=k8s.io/api/networking/v1beta1
 // +groupName=networking.k8s.io
 
 package v1beta1

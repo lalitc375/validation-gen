@@ -496,6 +496,8 @@ type ServiceCIDR struct {
 	// Standard object's metadata.
 	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
 	// +optional
+	// +k8s:subfield(name)=+k8s:required
+	// +k8s:subfield(name)=+k8s:format=k8s-long-name
 	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
 	// spec is the desired state of the ServiceCIDR.
 	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
@@ -513,6 +515,10 @@ type ServiceCIDRSpec struct {
 	// from which to assign service cluster IPs. Max of two CIDRs is allowed, one of each IP family.
 	// This field is immutable.
 	// +optional
+	// +k8s:required
+	// +k8s:minItems=1
+	// +k8s:maxItems=2
+	// +k8s:eachVal=+k8s:format=k8s-cidr
 	// +listType=atomic
 	CIDRs []string `json:"cidrs,omitempty" protobuf:"bytes,1,opt,name=cidrs"`
 }

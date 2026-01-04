@@ -814,6 +814,14 @@ var ValidateServiceCIDRName = apimachineryvalidation.NameIsDNSSubdomain
 
 func ValidateServiceCIDR(cidrConfig *networking.ServiceCIDR) field.ErrorList {
 	allErrs := apivalidation.ValidateObjectMeta(&cidrConfig.ObjectMeta, false, ValidateServiceCIDRName, field.NewPath("metadata"))
+	for i := range allErrs {
+		if allErrs[i].Field == "metadata.name" {
+			allErrs[i].MarkCoveredByDeclarative()
+			if allErrs[i].Type == field.ErrorTypeInvalid {
+				allErrs[i].WithOrigin("format=k8s-long-name")
+			}
+		}
+	}
 	allErrs = append(allErrs, validateServiceCIDRSpec(&cidrConfig.Spec, field.NewPath("spec", "cidrs"))...)
 	return allErrs
 }
@@ -821,17 +829,19 @@ func ValidateServiceCIDR(cidrConfig *networking.ServiceCIDR) field.ErrorList {
 func validateServiceCIDRSpec(cidrConfigSpec *networking.ServiceCIDRSpec, fieldPath *field.Path) field.ErrorList {
 	var allErrs field.ErrorList
 	if len(cidrConfigSpec.CIDRs) == 0 {
-		allErrs = append(allErrs, field.Required(fieldPath, "at least one CIDR required"))
+		allErrs = append(allErrs, field.Required(fieldPath, "at least one CIDR required").MarkCoveredByDeclarative())
 		return allErrs
 	}
 
 	if len(cidrConfigSpec.CIDRs) > 2 {
-		allErrs = append(allErrs, field.Invalid(fieldPath, cidrConfigSpec, "may only hold up to 2 values"))
+		allErrs = append(allErrs, field.TooMany(fieldPath, len(cidrConfigSpec.CIDRs), 2).MarkCoveredByDeclarative().WithOrigin("maxItems"))
 		return allErrs
 	}
 
 	for i, cidr := range cidrConfigSpec.CIDRs {
-		allErrs = append(allErrs, validation.IsValidCIDR(fieldPath.Index(i), cidr)...)
+		for _, err := range validation.IsValidCIDR(fieldPath.Index(i), cidr) {
+			allErrs = append(allErrs, err.MarkCoveredByDeclarative())
+		}
 	}
 
 	// validate cidrs are dual stack, one of each IP family

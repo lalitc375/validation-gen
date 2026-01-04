@@ -29,6 +29,7 @@ import (
 	operation "k8s.io/apimachinery/pkg/api/operation"
 	safe "k8s.io/apimachinery/pkg/api/safe"
 	validate "k8s.io/apimachinery/pkg/api/validate"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	sets "k8s.io/apimachinery/pkg/util/sets"
 	field "k8s.io/apimachinery/pkg/util/validation/field"
@@ -52,6 +53,22 @@ func RegisterValidations(scheme *runtime.Scheme) error {
 		switch op.Request.SubresourcePath() {
 		case "/":
 			return Validate_NetworkPolicyList(ctx, op, nil /* fldPath */, obj.(*NetworkPolicyList), safe.Cast[*NetworkPolicyList](oldObj))
+		}
+		return field.ErrorList{field.InternalError(nil, fmt.Errorf("no validation found for %T, subresource: %v", obj, op.Request.SubresourcePath()))}
+	})
+	// type ServiceCIDR
+	scheme.AddValidationFunc((*ServiceCIDR)(nil), func(ctx context.Context, op operation.Operation, obj, oldObj interface{}) field.ErrorList {
+		switch op.Request.SubresourcePath() {
+		case "/":
+			return Validate_ServiceCIDR(ctx, op, nil /* fldPath */, obj.(*ServiceCIDR), safe.Cast[*ServiceCIDR](oldObj))
+		}
+		return field.ErrorList{field.InternalError(nil, fmt.Errorf("no validation found for %T, subresource: %v", obj, op.Request.SubresourcePath()))}
+	})
+	// type ServiceCIDRList
+	scheme.AddValidationFunc((*ServiceCIDRList)(nil), func(ctx context.Context, op operation.Operation, obj, oldObj interface{}) field.ErrorList {
+		switch op.Request.SubresourcePath() {
+		case "/":
+			return Validate_ServiceCIDRList(ctx, op, nil /* fldPath */, obj.(*ServiceCIDRList), safe.Cast[*ServiceCIDRList](oldObj))
 		}
 		return field.ErrorList{field.InternalError(nil, fmt.Errorf("no validation found for %T, subresource: %v", obj, op.Request.SubresourcePath()))}
 	})
@@ -300,6 +317,100 @@ var symbolsForPolicyType = sets.New(PolicyTypeEgress, PolicyTypeIngress)
 // to declarative validation rules in the API schema.
 func Validate_PolicyType(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *PolicyType) (errs field.ErrorList) {
 	errs = append(errs, validate.Enum(ctx, op, fldPath, obj, oldObj, symbolsForPolicyType, nil)...)
+
+	return errs
+}
+
+// Validate_ServiceCIDR validates an instance of ServiceCIDR according
+// to declarative validation rules in the API schema.
+func Validate_ServiceCIDR(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *ServiceCIDR) (errs field.ErrorList) {
+	// field ServiceCIDR.TypeMeta has no validation
+
+	// field ServiceCIDR.ObjectMeta
+	errs = append(errs,
+		func(fldPath *field.Path, obj, oldObj *metav1.ObjectMeta, oldValueCorrelated bool) (errs field.ErrorList) {
+			// don't revalidate unchanged data
+			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+				return nil
+			}
+			// call field-attached validations
+			func() { // cohort name
+				earlyReturn := false
+				if e := validate.Subfield(ctx, op, fldPath, obj, oldObj, "name", func(o *metav1.ObjectMeta) *string { return &o.Name }, validate.DirectEqualPtr, validate.RequiredValue); len(e) != 0 {
+					errs = append(errs, e...)
+					earlyReturn = true
+				}
+				if earlyReturn {
+					return // do not proceed
+				}
+				errs = append(errs, validate.Subfield(ctx, op, fldPath, obj, oldObj, "name", func(o *metav1.ObjectMeta) *string { return &o.Name }, validate.DirectEqualPtr, validate.LongName)...)
+			}()
+			return
+		}(fldPath.Child("metadata"), &obj.ObjectMeta, safe.Field(oldObj, func(oldObj *ServiceCIDR) *metav1.ObjectMeta { return &oldObj.ObjectMeta }), oldObj != nil)...)
+
+	// field ServiceCIDR.Spec
+	errs = append(errs,
+		func(fldPath *field.Path, obj, oldObj *ServiceCIDRSpec, oldValueCorrelated bool) (errs field.ErrorList) {
+			// don't revalidate unchanged data
+			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+				return nil
+			}
+			// call the type's validation function
+			errs = append(errs, Validate_ServiceCIDRSpec(ctx, op, fldPath, obj, oldObj)...)
+			return
+		}(fldPath.Child("spec"), &obj.Spec, safe.Field(oldObj, func(oldObj *ServiceCIDR) *ServiceCIDRSpec { return &oldObj.Spec }), oldObj != nil)...)
+
+	// field ServiceCIDR.Status has no validation
+	return errs
+}
+
+// Validate_ServiceCIDRList validates an instance of ServiceCIDRList according
+// to declarative validation rules in the API schema.
+func Validate_ServiceCIDRList(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *ServiceCIDRList) (errs field.ErrorList) {
+	// field ServiceCIDRList.TypeMeta has no validation
+	// field ServiceCIDRList.ListMeta has no validation
+
+	// field ServiceCIDRList.Items
+	errs = append(errs,
+		func(fldPath *field.Path, obj, oldObj []ServiceCIDR, oldValueCorrelated bool) (errs field.ErrorList) {
+			// don't revalidate unchanged data
+			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+				return nil
+			}
+			// iterate the list and call the type's validation function
+			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, Validate_ServiceCIDR)...)
+			return
+		}(fldPath.Child("items"), obj.Items, safe.Field(oldObj, func(oldObj *ServiceCIDRList) []ServiceCIDR { return oldObj.Items }), oldObj != nil)...)
+
+	return errs
+}
+
+// Validate_ServiceCIDRSpec validates an instance of ServiceCIDRSpec according
+// to declarative validation rules in the API schema.
+func Validate_ServiceCIDRSpec(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *ServiceCIDRSpec) (errs field.ErrorList) {
+	// field ServiceCIDRSpec.CIDRs
+	errs = append(errs,
+		func(fldPath *field.Path, obj, oldObj []string, oldValueCorrelated bool) (errs field.ErrorList) {
+			// don't revalidate unchanged data
+			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+				return nil
+			}
+			// call field-attached validations
+			earlyReturn := false
+			if e := validate.MaxItems(ctx, op, fldPath, obj, oldObj, 2); len(e) != 0 {
+				errs = append(errs, e...)
+				earlyReturn = true
+			}
+			if e := validate.RequiredSlice(ctx, op, fldPath, obj, oldObj); len(e) != 0 {
+				errs = append(errs, e...)
+				earlyReturn = true
+			}
+			if earlyReturn {
+				return // do not proceed
+			}
+			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, validate.CIDR)...)
+			return
+		}(fldPath.Child("cidrs"), obj.CIDRs, safe.Field(oldObj, func(oldObj *ServiceCIDRSpec) []string { return oldObj.CIDRs }), oldObj != nil)...)
 
 	return errs
 }

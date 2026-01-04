@@ -34,6 +34,7 @@ message AggregationRule {
   // If any of the selectors match, then the ClusterRole's permissions will be added
   // +optional
   // +listType=atomic
+  // +k8s:required
   repeated .k8s.io.apimachinery.pkg.apis.meta.v1.LabelSelector clusterRoleSelectors = 1;
 }
 
@@ -49,12 +50,14 @@ message ClusterRole {
   // Rules holds all the PolicyRules for this ClusterRole
   // +optional
   // +listType=atomic
+  // +k8s:required
   repeated PolicyRule rules = 2;
 
   // AggregationRule is an optional field that describes how to build the Rules for this ClusterRole.
   // If AggregationRule is set, then the Rules are controller managed and direct changes to Rules will be
   // stomped by the controller.
   // +optional
+  // +k8s:optional
   optional AggregationRule aggregationRule = 3;
 }
 
