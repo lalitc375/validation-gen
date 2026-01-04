@@ -7,4 +7,4 @@
 | `roleRef` | `RoleRef` | `+k8s:required`<br>`+k8s:immutable` | Mandatory reference to the ClusterRole being used. Immutable after creation. |
 | `roleRef.apiGroup` | `string` | `+k8s:required`<br> | Mandatory API group for the role being referenced. |
 | `roleRef.kind` | `string` | `+k8s:required`<br> | Mandatory type of role being referenced. Must be `ClusterRole`. |
-| `roleRef.name` | `string` | `+k8s:required` | Mandatory name of the ClusterRole being referenced. |
+| `roleRef.name` | `string` | `+k8s:required`<br>`+k8s:format=k8s-path-segment-name` | Mandatory name of the ClusterRole being referenced. |

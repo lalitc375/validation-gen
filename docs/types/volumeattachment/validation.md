@@ -7,4 +7,4 @@
 | `spec.source` | `VolumeAttachmentSource` | `+k8s:required`<br>`+k8s:immutable` | Mandatory volume that should be attached. Immutable after creation. |
 | `spec.source.persistentVolumeName` | `*string` | `+k8s:unionMember`<br/>`+k8s:optional` | Optional name of the PersistentVolume being attached. |
 | `spec.source.inlineVolumeSpec` | `*PersistentVolumeSpec` | `+k8s:unionMember`<br/>`+k8s:optional` | Optional inline specification of a volume. |
-| `spec.nodeName` | `string` | `+k8s:required`<br>`+k8s:immutable`<br>`+k8s:format=k8s-long-name` | Mandatory name of the node that the volume should be attached to. Immutable after creation. |
+| `spec.nodeName` | `string` | `+k8s:required`<br>`+k8s:format=k8s-long-name`<br>`+k8s:immutable` | Mandatory name of the node that the volume should be attached to. Immutable after creation. |

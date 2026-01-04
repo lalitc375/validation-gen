@@ -4,7 +4,7 @@
 | :--- | :--- | :--- | :--- |
 | `metadata` | `metav1.ObjectMeta` | `+k8s:subfield(name=name)=+k8s:required`<br>`+k8s:subfield(name=name)=+k8s:format=k8s-long-name` | Event name is required and must be a DNS subdomain. |
 | `eventTime` | `metav1.MicroTime` | `+k8s:required` | Mandatory time when this Event was first observed. |
-| `reportingController` | `string` | `+k8s:required`<br>`+k8s:format=k8s-label-key` | Mandatory name of the controller that emitted this Event. |
+| `reportingController` | `string` | `+k8s:optional`<br>`+k8s:format=k8s-label-key` | Optional name of the controller that emitted this Event. |
 | `reportingInstance` | `string` | `+k8s:required`<br>`+k8s:maxLength=128` | Mandatory ID of the controller instance. |
 | `action` | `string` | `+k8s:required`<br>`+k8s:maxLength=128` | Mandatory action taken/failed. |
 | `reason` | `string` | `+k8s:required`<br>`+k8s:maxLength=128` | Mandatory machine-readable reason for the action. |

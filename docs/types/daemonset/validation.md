@@ -10,6 +10,7 @@
 | `spec.updateStrategy.rollingUpdate.maxSurge` | `intstr.IntOrString` | `+k8s:optional` | Max pods that can be created above desired count. Defaults to 0. |
 | `spec.minReadySeconds` | `int32` | `+k8s:optional`<br>`+k8s:minimum=0` | Min seconds for which a pod should be ready. |
 | `spec.revisionHistoryLimit` | `*int32` | `+k8s:optional`<br>`+k8s:minimum=0` | Max old history to retain. Defaults to 10. |
+| `status.conditions` | `[]DaemonSetCondition` | `+k8s:optional`<br>`+k8s:listType=map`<br>`+k8s:listMapKey=type` | Represents the latest available observations of a DaemonSet's current state. |
 
 
 ## Types

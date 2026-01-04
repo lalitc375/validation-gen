@@ -13,6 +13,7 @@
 | `spec.revisionHistoryLimit` | `*int32` | `+k8s:optional`<br>`+k8s:minimum=0` | Max old history to retain. Defaults to 10. |
 | `spec.paused` | `bool` | `+k8s:optional` | Indicates if the deployment is paused. |
 | `spec.progressDeadlineSeconds` | `*int32` | `+k8s:optional`<br>`+k8s:minimum=0` | Max time for deployment to make progress. Must be > `minReadySeconds` if both set. |
+| `status.conditions` | `[]DeploymentCondition` | `+k8s:optional`<br>`+k8s:listType=map`<br>`+k8s:listMapKey=type` | Represents the latest available observations of a deployment's current state. |
 
 
 ## Types

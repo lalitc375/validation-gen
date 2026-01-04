@@ -3,13 +3,22 @@
 | Field Path | Go Type | Validation Tags | Reasoning / Notes |
 | :--- | :--- | :--- | :--- |
 | `metadata` | `metav1.ObjectMeta` | `+k8s:subfield(name=name)=+k8s:required`<br>`+k8s:subfield(name=name)=+k8s:format=k8s-long-name`<br>`+k8s:subfield(name=labels)=+k8s:eachKey=+k8s:format=k8s-label-key`<br>`+k8s:subfield(name=annotations)=+k8s:eachKey=+k8s:format=k8s-annotation-key` | Pod name is required and must be a DNS subdomain. |
-| `spec.containers` | `[]Container` | `+k8s:required`<br>`+k8s:minItems=1` | Mandatory list of containers belonging to the pod. |
+| `spec.containers` | `[]Container` | `+k8s:required`<br>`+k8s:minItems=1`<br>`+k8s:listType=map`<br>`+k8s:listMapKey=name` | Mandatory list of containers belonging to the pod. |
+| `spec.containers[].name` | `string` | `+k8s:required`<br>`+k8s:format=k8s-short-name` | Mandatory name of the container. |
+| `spec.containers[].ports` | `[]ContainerPort` | `+k8s:optional`<br>`+k8s:listType=map`<br>`+k8s:listMapKey=containerPort`<br>`+k8s:listMapKey=protocol` | List of ports to expose from the container. |
+| `spec.containers[].env` | `[]EnvVar` | `+k8s:optional`<br>`+k8s:listType=map`<br>`+k8s:listMapKey=name` | Environment variables. |
+| `spec.containers[].envFrom` | `[]EnvFromSource` | `+k8s:optional`<br>`+k8s:listType=atomic` | List of sources to populate environment variables. |
+| `spec.containers[].volumeMounts` | `[]VolumeMount` | `+k8s:optional`<br>`+k8s:listType=map`<br>`+k8s:listMapKey=mountPath` | Pod volumes to mount into the container's filesystem. |
+| `spec.containers[].volumeDevices` | `[]VolumeDevice` | `+k8s:optional`<br>`+k8s:listType=map`<br>`+k8s:listMapKey=devicePath` | volumeDevices is the list of block devices to be used by the container. |
 | `spec.containers[].resources.limits` | `ResourceList` | `+k8s:eachKey=+k8s:format=k8s-container-resource-name` | Container resource limits. |
 | `spec.containers[].resources.requests` | `ResourceList` | `+k8s:eachKey=+k8s:format=k8s-container-resource-name` | Container resource requests. |
-| `spec.initContainers` | `[]Container` | `+k8s:optional` | Optional list of initialization containers. |
+| `spec.initContainers` | `[]Container` | `+k8s:optional`<br>`+k8s:listType=map`<br>`+k8s:listMapKey=name` | Optional list of initialization containers. |
+| `spec.initContainers[].name` | `string` | `+k8s:required`<br>`+k8s:format=k8s-short-name` | Mandatory name of the container. |
 | `spec.initContainers[].resources.limits` | `ResourceList` | `+k8s:eachKey=+k8s:format=k8s-container-resource-name` | Container resource limits. |
 | `spec.initContainers[].resources.requests` | `ResourceList` | `+k8s:eachKey=+k8s:format=k8s-container-resource-name` | Container resource requests. |
-| `spec.ephemeralContainers` | `[]EphemeralContainer` | `+k8s:optional` | Optional list of ephemeral containers. Forbidden on creation. |
+| `spec.ephemeralContainers` | `[]EphemeralContainer` | `+k8s:optional`<br>`+k8s:listType=map`<br>`+k8s:listMapKey=name` | Optional list of ephemeral containers. Forbidden on creation. |
+| `spec.ephemeralContainers[].name` | `string` | `+k8s:required`<br>`+k8s:format=k8s-short-name` | Mandatory name of the container. |
+| `spec.ephemeralContainers[].targetContainerName` | `string` | `+k8s:optional`<br>`+k8s:format=k8s-short-name` | Optional name of the target container. |
 | `spec.restartPolicy` | `RestartPolicy` | `+k8s:optional`<br> | Optional restart policy for all containers. Defaults to `Always`. |
 | `spec.terminationGracePeriodSeconds` | `*int64` | `+k8s:required`<br>`+k8s:minimum=0` | Mandatory duration in seconds for graceful termination. |
 | `spec.activeDeadlineSeconds` | `*int64` | `+k8s:optional`<br>`+k8s:minimum=1` | Optional duration in seconds the pod may be active. |
@@ -18,13 +27,13 @@
 | `spec.serviceAccountName` | `string` | `+k8s:optional`<br>`+k8s:format=k8s-long-name` | Optional name of the ServiceAccount to use. |
 | `spec.nodeName` | `string` | `+k8s:optional`<br>`+k8s:format=k8s-long-name` | Optional node on which this pod is scheduled. Immutable once set. |
 | `spec.affinity` | `*Affinity` | `+k8s:optional` | Optional scheduling constraints. |
-| `spec.tolerations` | `[]Toleration` | `+k8s:optional` | Optional list of tolerations. |
-| `spec.hostAliases` | `[]HostAlias` | `+k8s:optional` | Optional list of host aliases. |
-| `spec.hostAliases[].hostnames` | `[]string` | `+k8s:eachVal=+k8s:format=k8s-dns-subdomain` | Hostnames for the host alias. |
+| `spec.tolerations` | `[]Toleration` | `+k8s:optional`<br>`+k8s:listType=atomic` | Optional list of tolerations. |
+| `spec.hostAliases` | `[]HostAlias` | `+k8s:optional`<br>`+k8s:listType=map`<br>`+k8s:listMapKey=ip` | Optional list of host aliases. |
+| `spec.hostAliases[].hostnames` | `[]string` | `+k8s:eachVal=+k8s:format=k8s-long-name` | Hostnames for the host alias. |
 | `spec.priorityClassName` | `string` | `+k8s:optional`<br>`+k8s:format=k8s-long-name` | Optional priority class name. |
 | `spec.runtimeClassName` | `*string` | `+k8s:optional`<br>`+k8s:format=k8s-long-name` | Optional runtime class name. |
-| `spec.volumes` | `[]Volume` | `+k8s:optional` | Optional list of volumes. |
-| `spec.volumes[].name` | `string` | `+k8s:required`<br>`+k8s:format=k8s-dns-label` | Volume name. |
+| `spec.volumes` | `[]Volume` | `+k8s:optional`<br>`+k8s:listType=map`<br>`+k8s:listMapKey=name` | Optional list of volumes. |
+| `spec.volumes[].name` | `string` | `+k8s:required`<br>`+k8s:format=k8s-short-name` | Volume name. |
 | `spec.volumes[].hostPath` | `*HostPathVolumeSource` | `+k8s:unionMember`<br/>`+k8s:optional` | Host Path. |
 | `spec.volumes[].emptyDir` | `*EmptyDirVolumeSource` | `+k8s:unionMember`<br/>`+k8s:optional` | Empty Dir. |
 | `spec.volumes[].gcePersistentDisk` | `*GCEPersistentDiskVolumeSource` | `+k8s:unionMember`<br/>`+k8s:optional` | GCE Persistent Disk. |

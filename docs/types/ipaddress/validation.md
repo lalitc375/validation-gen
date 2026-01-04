@@ -9,7 +9,7 @@
 
 | Field Path | Go Type | Validation Tags | Reasoning / Notes |
 | :--- | :--- | :--- | :--- |
-| `group` | `string` | `+k8s:optional` | Optional API group of the referent. |
-| `resource` | `string` | `+k8s:required` | Mandatory resource of the referent. |
-| `namespace` | `string` | `+k8s:optional` | Optional namespace of the referent. |
-| `name` | `string` | `+k8s:required` | Mandatory name of the referent. |
+| `group` | `string` | `+k8s:optional`<br>`+k8s:format=k8s-long-name` | Optional API group of the referent. |
+| `resource` | `string` | `+k8s:required`<br>`+k8s:format=k8s-path-segment-name` | Mandatory resource of the referent. |
+| `namespace` | `string` | `+k8s:optional`<br>`+k8s:format=k8s-path-segment-name` | Optional namespace of the referent. |
+| `name` | `string` | `+k8s:required`<br>`+k8s:format=k8s-path-segment-name` | Mandatory name of the referent. |

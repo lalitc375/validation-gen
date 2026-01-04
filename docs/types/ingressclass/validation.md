@@ -10,8 +10,8 @@
 
 | Field Path | Go Type | Validation Tags | Reasoning / Notes |
 | :--- | :--- | :--- | :--- |
-| `apiGroup` | `*string` | `+k8s:optional` | Optional API group of the resource. |
-| `kind` | `string` | `+k8s:required` | Mandatory kind of the resource. |
-| `name` | `string` | `+k8s:required` | Mandatory name of the resource. |
+| `apiGroup` | `*string` | `+k8s:optional`<br>`+k8s:format=k8s-long-name` | Optional API group of the resource. |
+| `kind` | `string` | `+k8s:required`<br>`+k8s:format=k8s-path-segment-name` | Mandatory kind of the resource. |
+| `name` | `string` | `+k8s:required`<br>`+k8s:format=k8s-path-segment-name` | Mandatory name of the resource. |
 | `scope` | `*string` | `+k8s:optional`<br> | Optional scope. Defaults to `Cluster`. |
-| `namespace` | `*string` | `+k8s:optional` | Required if `scope` is `Namespace`. Must be empty if `scope` is `Cluster`. |
+| `namespace` | `*string` | `+k8s:optional`<br>`+k8s:format=k8s-short-name` | Required if `scope` is `Namespace`. Must be empty if `scope` is `Cluster`. |

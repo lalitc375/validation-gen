@@ -22,6 +22,7 @@
 | `port` | `int32` | `+k8s:required`<br>`+k8s:minimum=1`<br>`+k8s:maximum=65535` | Mandatory port number. |
 | `targetPort` | `intstr.IntOrString` | `+k8s:optional` | Optional port to access on the pods. |
 | `nodePort` | `int32` | `+k8s:optional`<br>`+k8s:minimum=1`<br>`+k8s:maximum=65535` | Optional node port. |
+| `appProtocol` | `*string` | `+k8s:optional`<br>`+k8s:format=k8s-label-key` | Optional application protocol. |
 
 
 ## Types

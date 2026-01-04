@@ -7,7 +7,8 @@
 | `spec.podInfoOnMount` | `*bool` | `+k8s:required` | Indicates if pod info is passed on mount. |
 | `spec.storageCapacity` | `*bool` | `+k8s:required` | Indicates if the driver produces capacity information. |
 | `spec.fsGroupPolicy` | `*FSGroupPolicy` | `+k8s:optional`<br> | Controls if Kubernetes should modify volume ownership and permissions. |
-| `spec.volumeLifecycleModes` | `[]VolumeLifecycleMode` | `+k8s:optional`<br>`+k8s:immutable`<br>`+k8s:eachVal=` | Supported volume modes. Immutable after creation. |
+| `spec.volumeLifecycleModes` | `[]VolumeLifecycleMode` | `+k8s:optional`<br>`+k8s:immutable`<br>`+k8s:listType=set` | Supported volume modes. Immutable after creation. |
+| `spec.tokenRequests` | `[]TokenRequest` | `+k8s:optional`<br>`+k8s:listType=atomic` | Optional list of token requests. |
 | `spec.nodeAllocatableUpdatePeriodSeconds` | `*int64` | `+k8s:optional`<br>`+k8s:minimum=10` | Period for node allocatable updates. Must be at least 10 seconds. |
 
 

@@ -7,3 +7,4 @@
 | `spec.selector` | `*metav1.LabelSelector` | `+k8s:required`<br>`+k8s:immutable` | Mandatory label selector. Must match pod template labels. Immutable after creation. |
 | `spec.template` | `corev1.PodTemplateSpec` | `+k8s:required` | Mandatory template for the pods that will be created. `restartPolicy` must be `Always`. `activeDeadlineSeconds` is forbidden. |
 | `spec.minReadySeconds` | `int32` | `+k8s:optional`<br>`+k8s:minimum=0` | Optional minimum number of seconds for which a newly created pod should be ready without any of its container crashing. |
+| `status.conditions` | `[]ReplicaSetCondition` | `+k8s:optional`<br>`+k8s:listType=map`<br>`+k8s:listMapKey=type` | Represents the latest available observations of a replica set's current state. |

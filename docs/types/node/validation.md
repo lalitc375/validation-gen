@@ -4,7 +4,7 @@
 | :--- | :--- | :--- | :--- |
 | `metadata` | `metav1.ObjectMeta` | `+k8s:subfield(name=name)=+k8s:required`<br>`+k8s:subfield(name=name)=+k8s:format=k8s-long-name`<br>`+k8s:subfield(name=labels)=+k8s:eachKey=+k8s:format=k8s-label-key`<br>`+k8s:subfield(name=annotations)=+k8s:eachKey=+k8s:format=k8s-annotation-key` | Node name is required and must be a DNS subdomain. |
 | `spec.podCIDR` | `string` | `+k8s:optional`<br>`+k8s:format=k8s-cidr`<br>`+k8s:immutable` | Optional pod IP range. Immutable after it is set. |
-| `spec.podCIDRs` | `[]string` | `+k8s:optional`<br>`+k8s:eachVal=+k8s:format=cidr`<br>`+k8s:immutable` | Optional pod IP ranges. Immutable after they are set. |
+| `spec.podCIDRs` | `[]string` | `+k8s:optional`<br>`+k8s:eachVal=+k8s:format=k8s-cidr`<br>`+k8s:immutable` | Optional pod IP ranges. Immutable after they are set. |
 | `spec.providerID` | `string` | `+k8s:optional`<br>`+k8s:immutable` | Optional ID assigned by the cloud provider. Immutable after it is set. |
 | `spec.unschedulable` | `bool` | `+k8s:optional` | Optional flag to disable pod scheduling on the node. |
 | `spec.taints` | `[]Taint` | `+k8s:optional` | Optional list of taints that have the \"NoSchedule\", \"PreferNoSchedule\" or \"NoExecute\" effect. |
