@@ -20,9 +20,11 @@ import (
 	"context"
 	"reflect"
 
+	"k8s.io/apimachinery/pkg/api/operation"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilvalidation "k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+	"k8s.io/apiserver/pkg/registry/rest"
 	"k8s.io/apiserver/pkg/storage/names"
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
 	"k8s.io/kubernetes/pkg/apis/networking"
@@ -66,7 +68,7 @@ func (networkPolicyStrategy) PrepareForUpdate(ctx context.Context, obj, old runt
 func (networkPolicyStrategy) Validate(ctx context.Context, obj runtime.Object) field.ErrorList {
 	networkPolicy := obj.(*networking.NetworkPolicy)
 	ops := validation.ValidationOptionsForNetworking(networkPolicy, nil)
-	return validation.ValidateNetworkPolicy(networkPolicy, ops)
+	return rest.ValidateDeclarativelyWithMigrationChecks(ctx, legacyscheme.Scheme, obj, nil, validation.ValidateNetworkPolicy(networkPolicy, ops), operation.Create)
 }
 
 // WarningsOnCreate returns warnings for the creation of the given object.
@@ -87,7 +89,7 @@ func (networkPolicyStrategy) ValidateUpdate(ctx context.Context, obj, old runtim
 	opts := validation.ValidationOptionsForNetworking(obj.(*networking.NetworkPolicy), old.(*networking.NetworkPolicy))
 	validationErrorList := validation.ValidateNetworkPolicy(obj.(*networking.NetworkPolicy), opts)
 	updateErrorList := validation.ValidateNetworkPolicyUpdate(obj.(*networking.NetworkPolicy), old.(*networking.NetworkPolicy), opts)
-	return append(validationErrorList, updateErrorList...)
+	return rest.ValidateDeclarativelyWithMigrationChecks(ctx, legacyscheme.Scheme, obj, old, append(validationErrorList, updateErrorList...), operation.Update)
 }
 
 // WarningsOnUpdate returns warnings for the given update.
