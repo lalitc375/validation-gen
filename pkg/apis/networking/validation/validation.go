@@ -172,13 +172,13 @@ func ValidateNetworkPolicySpec(spec *networking.NetworkPolicySpec, opts NetworkP
 	// Validate PolicyTypes
 	allowed := sets.NewString(string(networking.PolicyTypeIngress), string(networking.PolicyTypeEgress))
 	if len(spec.PolicyTypes) > len(allowed) {
-		allErrs = append(allErrs, field.Invalid(fldPath.Child("policyTypes"), &spec.PolicyTypes, "may not specify more than two policyTypes"))
+		allErrs = append(allErrs, field.TooMany(fldPath.Child("policyTypes"), len(spec.PolicyTypes), len(allowed)).WithOrigin("maxItems").MarkCoveredByDeclarative())
 		return allErrs
 	}
 	for i, pType := range spec.PolicyTypes {
 		policyPath := fldPath.Child("policyTypes").Index(i)
 		if !allowed.Has(string(pType)) {
-			allErrs = append(allErrs, field.NotSupported(policyPath, pType, []string{string(networking.PolicyTypeIngress), string(networking.PolicyTypeEgress)}))
+			allErrs = append(allErrs, field.NotSupported(policyPath, pType, []string{string(networking.PolicyTypeIngress), string(networking.PolicyTypeEgress)}).MarkCoveredByDeclarative())
 		}
 	}
 	return allErrs

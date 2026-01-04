@@ -30,6 +30,7 @@ import (
 	safe "k8s.io/apimachinery/pkg/api/safe"
 	validate "k8s.io/apimachinery/pkg/api/validate"
 	runtime "k8s.io/apimachinery/pkg/runtime"
+	sets "k8s.io/apimachinery/pkg/util/sets"
 	field "k8s.io/apimachinery/pkg/util/validation/field"
 )
 
@@ -235,7 +236,37 @@ func Validate_NetworkPolicySpec(ctx context.Context, op operation.Operation, fld
 			return
 		}(fldPath.Child("egress"), obj.Egress, safe.Field(oldObj, func(oldObj *NetworkPolicySpec) []NetworkPolicyEgressRule { return oldObj.Egress }), oldObj != nil)...)
 
-	// field NetworkPolicySpec.PolicyTypes has no validation
+	// field NetworkPolicySpec.PolicyTypes
+	errs = append(errs,
+		func(fldPath *field.Path, obj, oldObj []PolicyType, oldValueCorrelated bool) (errs field.ErrorList) {
+			// don't revalidate unchanged data
+			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+				return nil
+			}
+			// call field-attached validations
+			earlyReturn := false
+			if e := validate.MaxItems(ctx, op, fldPath, obj, oldObj, 2); len(e) != 0 {
+				errs = append(errs, e...)
+				earlyReturn = true
+			}
+			if earlyReturn {
+				return // do not proceed
+			}
+			// iterate the list and call the type's validation function
+			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, Validate_PolicyType)...)
+			return
+		}(fldPath.Child("policyTypes"), obj.PolicyTypes, safe.Field(oldObj, func(oldObj *NetworkPolicySpec) []PolicyType { return oldObj.PolicyTypes }), oldObj != nil)...)
+
+	return errs
+}
+
+var symbolsForPolicyType = sets.New(PolicyTypeEgress, PolicyTypeIngress)
+
+// Validate_PolicyType validates an instance of PolicyType according
+// to declarative validation rules in the API schema.
+func Validate_PolicyType(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *PolicyType) (errs field.ErrorList) {
+	errs = append(errs, validate.Enum(ctx, op, fldPath, obj, oldObj, symbolsForPolicyType, nil)...)
+
 	return errs
 }
 

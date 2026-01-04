@@ -47,7 +47,7 @@ type NetworkPolicy struct {
 
 // PolicyType string describes the NetworkPolicy type
 // This type is beta-level in 1.8
-// +enum
+// +k8s:enum
 type PolicyType string
 
 const (
@@ -102,6 +102,7 @@ type NetworkPolicySpec struct {
 	// This field is beta-level in 1.8
 	// +optional
 	// +listType=atomic
+	// +k8s:maxItems=2
 	PolicyTypes []PolicyType `json:"policyTypes,omitempty" protobuf:"bytes,4,rep,name=policyTypes,casttype=PolicyType"`
 }
 

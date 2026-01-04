@@ -117,6 +117,30 @@ func TestDeclarativeValidation(t *testing.T) {
 				field.Invalid(field.NewPath("spec", "ingress").Index(0).Child("from").Index(0).Child("ipBlock", "except").Index(0), "invalid-cidr", "must be a valid CIDR value, (e.g. 10.9.8.0/24 or 2001:db8::/64)"),
 			},
 		},
+		{
+			name: "too many policyTypes",
+			obj: &networking.NetworkPolicy{
+				ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "bar"},
+				Spec: networking.NetworkPolicySpec{
+					PolicyTypes: []networking.PolicyType{"Ingress", "Egress", "Ingress"},
+				},
+			},
+			expectedErrs: field.ErrorList{
+				field.TooMany(field.NewPath("spec", "policyTypes"), 3, 2).WithOrigin("maxItems"),
+			},
+		},
+		{
+			name: "invalid policyType",
+			obj: &networking.NetworkPolicy{
+				ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "bar"},
+				Spec: networking.NetworkPolicySpec{
+					PolicyTypes: []networking.PolicyType{"Invalid"},
+				},
+			},
+			expectedErrs: field.ErrorList{
+				field.NotSupported(field.NewPath("spec", "policyTypes").Index(0), networking.PolicyType("Invalid"), []string{"Ingress", "Egress"}),
+			},
+		},
 	}
 
 	for _, tt := range tests {
