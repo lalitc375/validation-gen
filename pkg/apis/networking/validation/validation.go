@@ -260,7 +260,9 @@ func ValidateIPBlock(ipb *networking.IPBlock, fldPath *field.Path, opts NetworkP
 
 	for i, exceptCIDRStr := range ipb.Except {
 		exceptPath := fldPath.Child("except").Index(i)
-		allErrs = append(allErrs, apivalidation.IsValidCIDRForLegacyField(exceptPath, exceptCIDRStr, opts.AllowCIDRsEvenIfInvalid)...)
+		for _, err := range apivalidation.IsValidCIDRForLegacyField(exceptPath, exceptCIDRStr, opts.AllowCIDRsEvenIfInvalid) {
+			allErrs = append(allErrs, err.MarkCoveredByDeclarative())
+		}
 		_, exceptCIDR, err := netutils.ParseCIDRSloppy(exceptCIDRStr)
 		if err != nil {
 			// Implies validation would have failed so we already added errors for it.

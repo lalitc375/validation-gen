@@ -187,6 +187,7 @@ type IPBlock struct {
 	// Except values will be rejected if they are outside the cidr range
 	// +optional
 	// +listType=atomic
+	// +k8s:eachVal=+k8s:format=k8s-cidr
 	Except []string `json:"except,omitempty" protobuf:"bytes,2,rep,name=except"`
 }
 

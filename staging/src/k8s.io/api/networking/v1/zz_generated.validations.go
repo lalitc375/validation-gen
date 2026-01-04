@@ -80,7 +80,18 @@ func Validate_IPBlock(ctx context.Context, op operation.Operation, fldPath *fiel
 			return
 		}(fldPath.Child("cidr"), &obj.CIDR, safe.Field(oldObj, func(oldObj *IPBlock) *string { return &oldObj.CIDR }), oldObj != nil)...)
 
-	// field IPBlock.Except has no validation
+	// field IPBlock.Except
+	errs = append(errs,
+		func(fldPath *field.Path, obj, oldObj []string, oldValueCorrelated bool) (errs field.ErrorList) {
+			// don't revalidate unchanged data
+			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+				return nil
+			}
+			// call field-attached validations
+			errs = append(errs, validate.EachSliceVal(ctx, op, fldPath, obj, oldObj, nil, nil, validate.CIDR)...)
+			return
+		}(fldPath.Child("except"), obj.Except, safe.Field(oldObj, func(oldObj *IPBlock) []string { return oldObj.Except }), oldObj != nil)...)
+
 	return errs
 }
 

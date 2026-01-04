@@ -94,6 +94,29 @@ func TestDeclarativeValidation(t *testing.T) {
 				field.Invalid(field.NewPath("spec", "ingress").Index(0).Child("from").Index(0).Child("ipBlock", "cidr"), "invalid-cidr", "must be a valid CIDR value, (e.g. 10.9.8.0/24 or 2001:db8::/64)"),
 			},
 		},
+		{
+			name: "invalid CIDR in except",
+			obj: &networking.NetworkPolicy{
+				ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "bar"},
+				Spec: networking.NetworkPolicySpec{
+					Ingress: []networking.NetworkPolicyIngressRule{
+						{
+							From: []networking.NetworkPolicyPeer{
+								{
+									IPBlock: &networking.IPBlock{
+										CIDR:   "10.0.0.0/8",
+										Except: []string{"invalid-cidr"},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedErrs: field.ErrorList{
+				field.Invalid(field.NewPath("spec", "ingress").Index(0).Child("from").Index(0).Child("ipBlock", "except").Index(0), "invalid-cidr", "must be a valid CIDR value, (e.g. 10.9.8.0/24 or 2001:db8::/64)"),
+			},
+		},
 	}
 
 	for _, tt := range tests {
