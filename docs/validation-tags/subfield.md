@@ -3,6 +3,10 @@
 ## Description
 Targets a subfield of a struct for validation, allowing validation tags to be applied to nested fields.
 
+**Important Usage Constraint:**
+*   **Use `+k8s:subfield` ONLY** when the type of the field is defined **outside** of the current `types.go` file (e.g., targeting fields in `metav1.ObjectMeta` or types from other packages).
+*   **Do NOT use `+k8s:subfield`** if the field's type is a subtype defined **within the same `types.go` file**. In such cases, apply the validation annotations directly to the fields within that subtype's definition.
+
 ## Scope
 `Type`, `Field`
 
@@ -20,27 +24,37 @@ Any Go type. This tag targets a field within a struct, regardless of its own typ
 
 ## Usage
 
-### Field
+### Field (External Type)
+Use this pattern for types defined in other packages, such as `metav1.ObjectMeta`.
+
 ```go
 type MyResource struct {
     // Targets the "name" subfield of the embedded metav1.ObjectMeta,
-    // applying specific validation and marking it as optional.
+    // which is defined in the apimachinery repository.
     // +k8s:subfield(name="name")=+k8s:optional
     // +k8s:subfield(name="name")=+k8s:format=k8s-long-name
     metav1.ObjectMeta `json:"metadata,omitempty"`
 }
 ```
 
-### Type
+### Type (Internal Subtype - Preferred Pattern)
+If the type is defined locally, put the tags on the subtype fields directly.
+
 ```go
-// Apply validation to a subfield of a type alias.
-// +k8s:subfield(name="value")=+k8s:minLength=5
+// CORRECT: Tags on the subtype definition
 type MyCustomField struct {
     Key   string `json:"key"`
+    // +k8s:minLength=5
     Value string `json:"value"`
 }
 
 type MyStruct struct {
+    Field MyCustomField `json:"field"`
+}
+
+// INCORRECT: Avoid using subfield for local types
+type MyIncorrectStruct struct {
+    // +k8s:subfield(name="value")=+k8s:minLength=5
     Field MyCustomField `json:"field"`
 }
 ```
