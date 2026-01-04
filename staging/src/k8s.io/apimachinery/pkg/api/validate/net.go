@@ -21,6 +21,7 @@ import (
 	"net"
 
 	"k8s.io/apimachinery/pkg/api/operation"
+	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	netutils "k8s.io/utils/net"
 )
@@ -32,6 +33,13 @@ func IPSloppy[T ~string](ctx context.Context, op operation.Operation, fldPath *f
 	vs := string(vt)
 	_, errs := ipSloppy(ctx, op, fldPath, &vs, nil)
 	return errs
+}
+
+// CIDR verifies that the specified value is a valid CIDR.
+func CIDR[T ~string](ctx context.Context, op operation.Operation, fldPath *field.Path, value, _ *T) field.ErrorList {
+	vt := *value
+	vs := string(vt)
+	return validation.IsValidCIDR(fldPath, vs)
 }
 
 func ipSloppy(ctx context.Context, op operation.Operation, fldPath *field.Path, value, _ *string) (net.IP, field.ErrorList) {

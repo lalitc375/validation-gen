@@ -29,23 +29,85 @@ import (
 )
 
 func TestDeclarativeValidation(t *testing.T) {
-	apitesting.VerifyValidationEquivalence(t,
-		request.WithRequestInfo(context.TODO(), &request.RequestInfo{
-			APIGroup:   "networking.k8s.io",
-			APIVersion: "v1",
-			Resource:   "networkpolicies",
-		}),
-		&networking.NetworkPolicy{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "foo",
-				Namespace: "bar",
+	ctx := request.WithRequestInfo(context.TODO(), &request.RequestInfo{
+		APIGroup:   "networking.k8s.io",
+		APIVersion: "v1",
+		Resource:   "networkpolicies",
+		Verb:       "create",
+		Name:       "foo",
+		Namespace:  "bar",
+	})
+
+	tests := []struct {
+		name         string
+		obj          *networking.NetworkPolicy
+		expectedErrs field.ErrorList
+	}{
+		{
+			name: "valid",
+			obj: &networking.NetworkPolicy{
+				ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "bar"},
+			},
+			expectedErrs: field.ErrorList{},
+		},
+		{
+			name: "missing CIDR",
+			obj: &networking.NetworkPolicy{
+				ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "bar"},
+				Spec: networking.NetworkPolicySpec{
+					Ingress: []networking.NetworkPolicyIngressRule{
+						{
+							From: []networking.NetworkPolicyPeer{
+								{
+									IPBlock: &networking.IPBlock{
+										CIDR: "",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedErrs: field.ErrorList{
+				field.Required(field.NewPath("spec", "ingress").Index(0).Child("from").Index(0).Child("ipBlock", "cidr"), ""),
 			},
 		},
-		func(ctx context.Context, obj runtime.Object) field.ErrorList {
-			return Strategy.Validate(ctx, obj)
+		{
+			name: "invalid CIDR",
+			obj: &networking.NetworkPolicy{
+				ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "bar"},
+				Spec: networking.NetworkPolicySpec{
+					Ingress: []networking.NetworkPolicyIngressRule{
+						{
+							From: []networking.NetworkPolicyPeer{
+								{
+									IPBlock: &networking.IPBlock{
+										CIDR: "invalid-cidr",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedErrs: field.ErrorList{
+				field.Invalid(field.NewPath("spec", "ingress").Index(0).Child("from").Index(0).Child("ipBlock", "cidr"), "invalid-cidr", "must be a valid CIDR value, (e.g. 10.9.8.0/24 or 2001:db8::/64)"),
+			},
 		},
-		nil,
-	)
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			apitesting.VerifyValidationEquivalence(t,
+				ctx,
+				tt.obj,
+				func(ctx context.Context, obj runtime.Object) field.ErrorList {
+					return Strategy.Validate(ctx, obj)
+				},
+				tt.expectedErrs,
+			)
+		})
+	}
 }
 
 func TestDeclarativeUpdateValidation(t *testing.T) {
@@ -54,6 +116,9 @@ func TestDeclarativeUpdateValidation(t *testing.T) {
 			APIGroup:   "networking.k8s.io",
 			APIVersion: "v1",
 			Resource:   "networkpolicies",
+			Verb:       "update",
+			Name:       "foo",
+			Namespace:  "bar",
 		}),
 		&networking.NetworkPolicy{
 			ObjectMeta: metav1.ObjectMeta{

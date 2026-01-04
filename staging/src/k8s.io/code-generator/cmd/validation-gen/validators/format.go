@@ -49,6 +49,7 @@ func (formatTagValidator) ValidScopes() sets.Set[Scope] {
 
 var (
 	// Keep this list alphabetized.
+	cidrValidator                       = types.Name{Package: libValidationPkg, Name: "CIDR"}
 	ipSloppyValidator                   = types.Name{Package: libValidationPkg, Name: "IPSloppy"}
 	extendedResourceNameValidator       = types.Name{Package: libValidationPkg, Name: "ExtendedResourceName"}
 	labelKeyValidator                   = types.Name{Package: libValidationPkg, Name: "LabelKey"}
@@ -86,6 +87,8 @@ func getFormatValidationFunction(format string) (FunctionGen, error) {
 
 	switch format {
 	// Keep this sequence alphabetized.
+	case "k8s-cidr":
+		return Function(formatTagName, DefaultFlags, cidrValidator), nil
 	case "k8s-extended-resource-name":
 		return Function(formatTagName, DefaultFlags, extendedResourceNameValidator), nil
 	case "k8s-ip":
@@ -121,6 +124,9 @@ func (ftv formatTagValidator) Docs() TagDoc {
 		Scopes:         ftv.ValidScopes().UnsortedList(),
 		Description:    "Indicates that a string field has a particular format.",
 		Payloads: []TagPayloadDoc{{ // Keep this list alphabetized.
+			Description: "k8s-cidr",
+			Docs:        "This field holds a CIDR value.",
+		}, {
 			Description: "k8s-extended-resource-name",
 			Docs:        "This field holds a Kubernetes extended resource name. This is a domain-prefixed name that must not have a `kubernetes.io` or `requests.` prefix. When `requests.` is prepended, the result must be a valid label key, as used by quota.",
 		}, {
