@@ -11,7 +11,14 @@
 
 | Field Path | Go Type | Validation Tags | Reasoning / Notes |
 | :--- | :--- | :--- | :--- |
-| `type` | `ComponentConditionType` | `+k8s:required`<br>`+k8s:enum=["Healthy"]` | Mandatory condition type. |
-| `status` | `ConditionStatus` | `+k8s:required`<br>`+k8s:enum=["True", "False", "Unknown"]` | Mandatory status of the condition. |
+| `type` | `ComponentConditionType` | `+k8s:required`<br> | Mandatory condition type. |
+| `status` | `ConditionStatus` | `+k8s:required`<br> | Mandatory status of the condition. |
 | `message` | `string` | `+k8s:optional` | Optional human-readable message. |
 | `error` | `string` | `+k8s:optional` | Optional error message. |
+
+## Types
+
+| Go Type | Validation Tags |
+| :--- | :--- |
+| `ComponentConditionType` | `+k8s:enum` |
+| `ConditionStatus` | `+k8s:enum` |

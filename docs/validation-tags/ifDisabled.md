@@ -32,9 +32,8 @@ type MyStruct struct {
 
 ### Type
 ```go
-// If "NewProtocolRollout" feature is disabled, "LegacyProtocol" is a valid enum value.
-// +k8s:enum
-// +k8s:ifDisabled(NewProtocolRollout)=+k8s:enumExclude
+// If "LegacySupport" feature is disabled, this type is validated as an enum.
+// +k8s:ifDisabled(LegacySupport)=+k8s:enum
 type Protocol string
 
 const (
@@ -42,7 +41,7 @@ const (
     LegacyProtocol Protocol = "Legacy"
 )
 ```
-In the above example, if `NewProtocolRollout` is disabled, `LegacyProtocol` will be an invalid value for the `Protocol` enum.
+In the above example, if `LegacySupport` is disabled, the `Protocol` type will be validated as an enum.
 
 ## Migrating from Handwritten Validation
 
@@ -136,10 +135,10 @@ import (
 
 func TestDeclarativeValidateConditionalEnum(t *testing.T) {
     //
-    // Scenario 1: LegacySupport feature gate is DISABLED
+    // Scenario 1: LegacySupport feature gate is ENABLED
     //
-    t.Run("LegacySupport=false", func(t *testing.T) {
-        featuregatetesting.SetFeatureGateDuringTest(t, utilfeature.DefaultFeatureGate, features.LegacySupport, false)
+    t.Run("LegacySupport=true", func(t *testing.T) {
+        featuregatetesting.SetFeatureGateDuringTest(t, utilfeature.DefaultFeatureGate, features.LegacySupport, true)
 
         // Test that "Legacy" is an allowed value
         validObj := &example.MyResource{Protocol: example.ProtocolLegacy}
@@ -149,10 +148,10 @@ func TestDeclarativeValidateConditionalEnum(t *testing.T) {
     })
 
     //
-    // Scenario 2: LegacySupport feature gate is ENABLED
+    // Scenario 2: LegacySupport feature gate is DISABLED
     //
-    t.Run("LegacySupport=true", func(t *testing.T) {
-        featuregatetesting.SetFeatureGateDuringTest(t, utilfeature.DefaultFeatureGate, features.LegacySupport, true)
+    t.Run("LegacySupport=false", func(t *testing.T) {
+        featuregatetesting.SetFeatureGateDuringTest(t, utilfeature.DefaultFeatureGate, features.LegacySupport, false)
 
         // Test that "Legacy" is now a forbidden value
         invalidObj := &example.MyResource{Protocol: example.ProtocolLegacy}
@@ -169,5 +168,5 @@ func TestDeclarativeValidateConditionalEnum(t *testing.T) {
 In this example:
 1.  We define two sub-tests, one for each state of the `LegacySupport` feature gate.
 2.  `featuregatetesting.SetFeatureGateDuringTest` is used to enable or disable the feature gate for the duration of each sub-test.
-3.  When the feature is disabled, `ProtocolLegacy` is a valid enum value, and no error is expected.
-4.  When the feature is enabled, `+k8s:enumExclude` takes effect, and `ProtocolLegacy` becomes an invalid value, resulting in a `field.NotSupported` error.
+3.  When the feature is enabled, the `ifDisabled` condition is not met, so `ProtocolLegacy` is a valid enum value, and no error is expected.
+4.  When the feature is disabled, the `ifDisabled` condition is met, `+k8s:enumExclude` takes effect, and `ProtocolLegacy` becomes an invalid value, resulting in a `field.NotSupported` error.

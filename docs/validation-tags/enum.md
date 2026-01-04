@@ -4,18 +4,18 @@
 Marks a string type as an enumeration. All `const` values defined for this type in the same package are considered valid values.
 
 ## Scope
-`Type`
+`Type` (Must **NOT** be applied to struct fields)
 
 ## Supported Go Types
-`string`, `*string` (and any alias of these types)
+`string` (and any alias of `string`)
 
 ## Stability
 **Beta**
 
 ## Usage
 
-### Type
-The `+k8s:enum` tag must be applied to a type definition.
+### Type (Required)
+The `+k8s:enum` tag MUST be applied to the type definition. All `const` values defined for this type in the same package are automatically considered valid values for the enumeration.
 
 ```go
 // +k8s:enum
@@ -28,16 +28,18 @@ const (
 ```
 
 ### Field
-To use the enum, reference the type in a struct field.
+To use the enum, reference the type in a struct field. **Do not** apply the `+k8s:enum` tag to the field itself; the validation is automatically inherited from the type definition. Both value and pointer fields are supported.
 
 ```go
 type ServicePort struct {
-    Protocol Protocol `json:"protocol,omitempty"`
+    // Validation is inherited from the Protocol type definition
+    Protocol Protocol  `json:"protocol,omitempty"`
+    Mode     *Protocol `json:"mode,omitempty"`
 }
 ```
 
 ### Map & Slice
-To validate items in a map or slice, the enum type must be used as the value.
+To validate items in a map or slice, the enum type must be used as the key or value.
 
 ```go
 type ProtocolList struct {
@@ -50,6 +52,9 @@ type ProtocolSlice struct {
     Protocols []Protocol `json:"protocols,omitempty"`
 }
 ```
+
+## Conditional Exclusions
+Enum values can be conditionally excluded based on feature gates or other options using `+k8s:ifEnabled` or `+k8s:ifDisabled` combined with `+k8s:enumExclude`. See [enumExclude.md](enumExclude.md) for more details.
 
 ## Migrating from Handwritten Validation
 

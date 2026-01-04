@@ -26,10 +26,30 @@ const (
     UDP Protocol = "UDP"
 
     // +k8s:enumExclude
-    InternalProtocol Protocol = "Internal" // This value will not be considered valid
+    InternalProtocol Protocol = "Internal" // This value will ALWAYS be considered invalid
 )
 ```
-The excluded constant will not be part of the generated enum validation for the `Protocol` type.
+
+### Conditional Exclusion
+You can conditionally exclude a constant from the enum based on a feature gate or option.
+
+```go
+// +k8s:enum
+type Protocol string
+
+const (
+    TCP Protocol = "TCP"
+    UDP Protocol = "UDP"
+
+    // +k8s:ifDisabled(SCTPFeature)=+k8s:enumExclude
+    SCTP Protocol = "SCTP" // SCTP is excluded if SCTPFeature is disabled (included if enabled)
+    
+    // +k8s:ifEnabled(DeprecatedLegacy)=+k8s:enumExclude
+    Legacy Protocol = "Legacy" // Legacy is excluded if DeprecatedLegacy feature is enabled
+)
+```
+
+The exclusion rule will be evaluated at runtime. If multiple conditional tags are used on the same constant, the value is excluded if ANY of the exclude conditions are met.
 
 ## Migrating from Handwritten Validation
 

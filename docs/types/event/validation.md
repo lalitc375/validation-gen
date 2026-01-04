@@ -9,7 +9,7 @@
 | `action` | `string` | `+k8s:required`<br>`+k8s:maxLength=128` | Mandatory action taken/failed. |
 | `reason` | `string` | `+k8s:required`<br>`+k8s:maxLength=128` | Mandatory machine-readable reason for the action. |
 | `regarding` | `corev1.ObjectReference` | `+k8s:optional`<br>`+k8s:immutable` | The object this Event is about. Immutable after creation. |
-| `type` | `string` | `+k8s:required`<br>`+k8s:enum=["Normal", "Warning"]` | Mandatory type of the event. |
+| `type` | `string` | `+k8s:required`<br> | Mandatory type of the event. |
 | `note` | `string` | `+k8s:optional`<br>`+k8s:maxLength=1024` | Optional human-readable description. |
 | `series.count` | `int32` | `+k8s:optional`<br>`+k8s:minimum=2` | Mandatory if series is present. Number of occurrences. |
 | `series.lastObservedTime` | `metav1.MicroTime` | `+k8s:optional` | Mandatory if series is present. Time of last occurrence. |

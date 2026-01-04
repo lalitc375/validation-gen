@@ -10,10 +10,10 @@
 | `spec.initContainers[].resources.limits` | `ResourceList` | `+k8s:eachKey=+k8s:format=k8s-container-resource-name` | Container resource limits. |
 | `spec.initContainers[].resources.requests` | `ResourceList` | `+k8s:eachKey=+k8s:format=k8s-container-resource-name` | Container resource requests. |
 | `spec.ephemeralContainers` | `[]EphemeralContainer` | `+k8s:optional` | Optional list of ephemeral containers. Forbidden on creation. |
-| `spec.restartPolicy` | `RestartPolicy` | `+k8s:optional`<br>`+k8s:enum=["Always", "OnFailure", "Never"]` | Optional restart policy for all containers. Defaults to `Always`. |
+| `spec.restartPolicy` | `RestartPolicy` | `+k8s:optional`<br> | Optional restart policy for all containers. Defaults to `Always`. |
 | `spec.terminationGracePeriodSeconds` | `*int64` | `+k8s:required`<br>`+k8s:minimum=0` | Mandatory duration in seconds for graceful termination. |
 | `spec.activeDeadlineSeconds` | `*int64` | `+k8s:optional`<br>`+k8s:minimum=1` | Optional duration in seconds the pod may be active. |
-| `spec.dnsPolicy` | `DNSPolicy` | `+k8s:optional`<br>`+k8s:enum=["ClusterFirstWithHostNet", "ClusterFirst", "Default", "None"]` | Optional DNS policy. Defaults to `ClusterFirst`. |
+| `spec.dnsPolicy` | `DNSPolicy` | `+k8s:optional`<br> | Optional DNS policy. Defaults to `ClusterFirst`. |
 | `spec.nodeSelector` | `map[string]string` | `+k8s:optional`<br>`+k8s:eachKey=+k8s:format=k8s-label-key` | Optional selector which must be true for the pod to fit on a node. |
 | `spec.serviceAccountName` | `string` | `+k8s:optional`<br>`+k8s:format=k8s-long-name` | Optional name of the ServiceAccount to use. |
 | `spec.nodeName` | `string` | `+k8s:optional`<br>`+k8s:format=k8s-long-name` | Optional node on which this pod is scheduled. Immutable once set. |
@@ -89,3 +89,12 @@
 | `spec.securityContext.seccompProfile.localhostProfile` | `*string` | `+k8s:unionMember(memberName="Localhost")`<br/>`+k8s:optional` | Localhost profile. |
 | `spec.containers[].securityContext.seccompProfile.type` | `SeccompProfileType` | `+k8s:unionDiscriminator` | Seccomp profile type. |
 | `spec.containers[].securityContext.seccompProfile.localhostProfile` | `*string` | `+k8s:unionMember(memberName="Localhost")`<br/>`+k8s:optional` | Localhost profile. |
+
+
+## Types
+
+| Go Type | Validation Tags |
+| :--- | :--- |
+| `DNSPolicy` | `+k8s:enum` |
+| `RestartPolicy` | `+k8s:enum` |
+| `SeccompProfileType` | `+k8s:enum` |

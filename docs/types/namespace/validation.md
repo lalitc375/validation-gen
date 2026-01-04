@@ -9,4 +9,11 @@
 
 | Field Path | Go Type | Validation Tags | Reasoning / Notes |
 | :--- | :--- | :--- | :--- |
-| `phase` | `NamespacePhase` | `+k8s:optional`<br>`+k8s:enum=["Active", "Terminating"]` | The current lifecycle phase of the namespace. |
+| `phase` | `NamespacePhase` | `+k8s:optional`<br> | The current lifecycle phase of the namespace. |
+
+
+## Types
+
+| Go Type | Validation Tags |
+| :--- | :--- |
+| `NamespacePhase` | `+k8s:enum` |

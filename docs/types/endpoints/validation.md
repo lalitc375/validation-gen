@@ -12,5 +12,12 @@
 | `subsets[].ports` | `[]EndpointPort` | `+k8s:optional` | Port numbers and protocols of the endpoints. |
 | `subsets[].ports[].name` | `string` | `+k8s:optional`<br>`+k8s:format=k8s-short-name` | Optional name of this port. Required if more than one port is specified. |
 | `subsets[].ports[].port` | `int32` | `+k8s:required`<br>`+k8s:minimum=1`<br>`+k8s:maximum=65535` | Mandatory port number. |
-| `subsets[].ports[].protocol` | `Protocol` | `+k8s:required`<br>`+k8s:enum=["TCP", "UDP", "SCTP"]` | Mandatory protocol. Defaults to `TCP`. |
+| `subsets[].ports[].protocol` | `Protocol` | `+k8s:required`<br> | Mandatory protocol. Defaults to `TCP`. |
 | `subsets[].ports[].appProtocol` | `*string` | `+k8s:optional`<br>`+k8s:format=k8s-label-key` | Optional application protocol hint. |
+
+
+## Types
+
+| Go Type | Validation Tags |
+| :--- | :--- |
+| `Protocol` | `+k8s:enum` |

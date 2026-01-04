@@ -4,11 +4,11 @@
 | :--- | :--- | :--- | :--- |
 | `metadata` | `metav1.ObjectMeta` | `+k8s:subfield(name=name)=+k8s:required`<br>`+k8s:subfield(name=name)=+k8s:format=k8s-long-name`<br>`+k8s:subfield(name=labels)=+k8s:eachKey=+k8s:format=k8s-label-key`<br>`+k8s:subfield(name=annotations)=+k8s:eachKey=+k8s:format=k8s-annotation-key` | PersistentVolume name is required and must be a DNS subdomain. |
 | `spec.capacity` | `ResourceList` | `+k8s:required` | Mandatory map of resource names to quantities. Only `storage` is typically allowed. |
-| `spec.accessModes` | `[]PersistentVolumeAccessMode` | `+k8s:required`<br>`+k8s:minItems=1`<br>`+k8s:eachVal=+k8s:enum=["ReadWriteOnce", "ReadOnlyMany", "ReadWriteMany", "ReadWriteOncePod"]` | Mandatory ways the volume can be mounted. `ReadWriteOncePod` cannot be combined with other modes. |
-| `spec.persistentVolumeReclaimPolicy` | `PersistentVolumeReclaimPolicy` | `+k8s:optional`<br>`+k8s:enum=["Recycle", "Delete", "Retain"]` | Optional policy for maintenance after release. Defaults to `Retain`. |
+| `spec.accessModes` | `[]PersistentVolumeAccessMode` | `+k8s:required`<br>`+k8s:minItems=1`<br>`+k8s:eachVal=` | Mandatory ways the volume can be mounted. `ReadWriteOncePod` cannot be combined with other modes. |
+| `spec.persistentVolumeReclaimPolicy` | `PersistentVolumeReclaimPolicy` | `+k8s:optional`<br> | Optional policy for maintenance after release. Defaults to `Retain`. |
 | `spec.storageClassName` | `string` | `+k8s:optional` | Optional name of the StorageClass to which this volume belongs. |
 | `spec.mountOptions` | `[]string` | `+k8s:optional` | Optional list of mount options. |
-| `spec.volumeMode` | `*PersistentVolumeMode` | `+k8s:optional`<br>`+k8s:enum=["Filesystem", "Block"]` | Optional volume mode. Defaults to `Filesystem`. |
+| `spec.volumeMode` | `*PersistentVolumeMode` | `+k8s:optional`<br> | Optional volume mode. Defaults to `Filesystem`. |
 | `spec.nodeAffinity` | `*VolumeNodeAffinity` | `+k8s:optional` | Optional constraints that limit what nodes this volume can be accessed from. |
 | `spec.claimRef` | `*ObjectReference` | `+k8s:optional` | Optional reference to the PersistentVolumeClaim. |
 | `spec.gcePersistentDisk` | `*GCEPersistentDiskVolumeSource` | `+k8s:unionMember`<br/>`+k8s:optional` | GCE Persistent Disk. |
@@ -34,3 +34,12 @@
 | `spec.storageos` | `*StorageOSPersistentVolumeSource` | `+k8s:unionMember`<br/>`+k8s:optional` | StorageOS. |
 | `spec.csi` | `*CSIPersistentVolumeSource` | `+k8s:unionMember`<br/>`+k8s:optional` | CSI. |
 | `spec.flexVolume.options` | `map[string]string` | `+k8s:eachKey=+k8s:format=k8s-flex-volume-option-key`<br/>`+k8s:optional` | Optional extra command options. |
+
+
+## Types
+
+| Go Type | Validation Tags |
+| :--- | :--- |
+| `PersistentVolumeAccessMode` | `+k8s:enum` |
+| `PersistentVolumeMode` | `+k8s:enum` |
+| `PersistentVolumeReclaimPolicy` | `+k8s:enum` |

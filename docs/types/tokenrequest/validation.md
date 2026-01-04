@@ -12,7 +12,7 @@
 
 | Field Path | Go Type | Validation Tags | Reasoning / Notes |
 | :--- | :--- | :--- | :--- |
-| `kind` | `string` | `+k8s:optional`<br>`+k8s:enum=["Pod", "Secret"]` | Optional kind of the referent. |
+| `kind` | `string` | `+k8s:optional`<br> | Optional kind of the referent. |
 | `apiVersion` | `string` | `+k8s:optional` | Optional API version of the referent. |
 | `name` | `string` | `+k8s:optional` | Optional name of the referent. |
 | `uid` | `types.UID` | `+k8s:optional` | Optional UID of the referent. |

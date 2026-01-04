@@ -9,7 +9,7 @@
 | `spec.backoffLimit` | `*int32` | `+k8s:optional`<br>`+k8s:minimum=0` | Optional number of retries before marking this job failed. Defaults to 6. |
 | `spec.selector` | `*metav1.LabelSelector` | `+k8s:required`<br>`+k8s:immutable` | Mandatory label query over pods. Immutable after creation. |
 | `spec.template` | `corev1.PodTemplateSpec` | `+k8s:required` | Mandatory pod template. `restartPolicy` must be `Never` or `OnFailure`. |
-| `spec.completionMode` | `*CompletionMode` | `+k8s:optional`<br>`+k8s:enum=["NonIndexed", "Indexed"]` | Optional completion mode. Defaults to `NonIndexed`. |
+| `spec.completionMode` | `*CompletionMode` | `+k8s:optional`<br> | Optional completion mode. Defaults to `NonIndexed`. |
 | `spec.suspend` | `*bool` | `+k8s:optional` | Optional flag to suspend subsequent executions. |
 | `spec.ttlSecondsAfterFinished` | `*int32` | `+k8s:optional`<br>`+k8s:minimum=0` | Optional lifetime of a Job that has finished execution. |
 | `spec.backoffLimitPerIndex` | `*int32` | `+k8s:optional`<br>`+k8s:minimum=0`<br>`+k8s:immutable` | Optional limit for retries within an index. Only for `Indexed` completion mode. |
@@ -21,3 +21,10 @@
 | `spec.successPolicy` | `*SuccessPolicy` | `+k8s:optional`<br>`+k8s:immutable` | Optional policy for declaring Job success. Only for `Indexed` Jobs. |
 | `spec.successPolicy.rules` | `[]SuccessPolicyRule` | `+k8s:required`<br/>`+k8s:maxItems=20` | Mandatory list of success policy rules. |
 | `spec.managedBy` | `*string` | `+k8s:optional`<br>`+k8s:maxLength=63` | Optional name of the controller that manages this job. |
+
+
+## Types
+
+| Go Type | Validation Tags |
+| :--- | :--- |
+| `CompletionMode` | `+k8s:enum` |
