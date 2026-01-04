@@ -190,6 +190,14 @@ func ValidateNetworkPolicySpec(spec *networking.NetworkPolicySpec, opts NetworkP
 // ValidateNetworkPolicy validates a networkpolicy.
 func ValidateNetworkPolicy(np *networking.NetworkPolicy, opts NetworkPolicyValidationOptions) field.ErrorList {
 	allErrs := apivalidation.ValidateObjectMeta(&np.ObjectMeta, true, ValidateNetworkPolicyName, field.NewPath("metadata"))
+	for i := range allErrs {
+		if allErrs[i].Field == "metadata.name" {
+			allErrs[i].MarkCoveredByDeclarative()
+			if allErrs[i].Type == field.ErrorTypeInvalid {
+				allErrs[i].WithOrigin("format=k8s-long-name")
+			}
+		}
+	}
 	allErrs = append(allErrs, ValidateNetworkPolicySpec(&np.Spec, opts, field.NewPath("spec"))...)
 	return allErrs
 }

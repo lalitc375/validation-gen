@@ -1064,6 +1064,9 @@ type NetworkPolicy struct {
 	// Standard object's metadata.
 	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
 	// +optional
+	// +k8s:subfield(name)=+k8s:required
+	// +k8s:subfield(name)=+k8s:format=k8s-long-name
+	// +k8s:subfield(labels)=+k8s:eachKey=+k8s:format=k8s-label-key
 	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
 
 	// Specification of the desired behavior for this NetworkPolicy.

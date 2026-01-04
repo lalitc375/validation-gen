@@ -29,6 +29,7 @@ import (
 	operation "k8s.io/apimachinery/pkg/api/operation"
 	safe "k8s.io/apimachinery/pkg/api/safe"
 	validate "k8s.io/apimachinery/pkg/api/validate"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	sets "k8s.io/apimachinery/pkg/util/sets"
 	field "k8s.io/apimachinery/pkg/util/validation/field"
@@ -108,7 +109,33 @@ func Validate_IPBlock(ctx context.Context, op operation.Operation, fldPath *fiel
 // to declarative validation rules in the API schema.
 func Validate_NetworkPolicy(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *NetworkPolicy) (errs field.ErrorList) {
 	// field NetworkPolicy.TypeMeta has no validation
-	// field NetworkPolicy.ObjectMeta has no validation
+
+	// field NetworkPolicy.ObjectMeta
+	errs = append(errs,
+		func(fldPath *field.Path, obj, oldObj *v1.ObjectMeta, oldValueCorrelated bool) (errs field.ErrorList) {
+			// don't revalidate unchanged data
+			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+				return nil
+			}
+			// call field-attached validations
+			func() { // cohort name
+				earlyReturn := false
+				if e := validate.Subfield(ctx, op, fldPath, obj, oldObj, "name", func(o *v1.ObjectMeta) *string { return &o.Name }, validate.DirectEqualPtr, validate.RequiredValue); len(e) != 0 {
+					errs = append(errs, e...)
+					earlyReturn = true
+				}
+				if earlyReturn {
+					return // do not proceed
+				}
+				errs = append(errs, validate.Subfield(ctx, op, fldPath, obj, oldObj, "name", func(o *v1.ObjectMeta) *string { return &o.Name }, validate.DirectEqualPtr, validate.LongName)...)
+			}()
+			func() { // cohort labels
+				errs = append(errs, validate.Subfield(ctx, op, fldPath, obj, oldObj, "labels", func(o *v1.ObjectMeta) map[string]string { return o.Labels }, validate.SemanticDeepEqual, func(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj map[string]string) field.ErrorList {
+					return validate.EachMapKey(ctx, op, fldPath, obj, oldObj, validate.LabelKey)
+				})...)
+			}()
+			return
+		}(fldPath.Child("metadata"), &obj.ObjectMeta, safe.Field(oldObj, func(oldObj *NetworkPolicy) *v1.ObjectMeta { return &oldObj.ObjectMeta }), oldObj != nil)...)
 
 	// field NetworkPolicy.Spec
 	errs = append(errs,
