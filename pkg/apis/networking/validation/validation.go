@@ -197,6 +197,12 @@ func ValidateNetworkPolicy(np *networking.NetworkPolicy, opts NetworkPolicyValid
 				allErrs[i].WithOrigin("format=k8s-long-name")
 			}
 		}
+		if allErrs[i].Field == "metadata.labels" {
+			allErrs[i].MarkCoveredByDeclarative()
+			if allErrs[i].Type == field.ErrorTypeInvalid {
+				allErrs[i].WithOrigin("format=k8s-label-key")
+			}
+		}
 	}
 	allErrs = append(allErrs, ValidateNetworkPolicySpec(&np.Spec, opts, field.NewPath("spec"))...)
 	return allErrs

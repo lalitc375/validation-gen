@@ -173,6 +173,19 @@ func TestDeclarativeValidation(t *testing.T) {
 				field.Invalid(field.NewPath("metadata", "name"), "Invalid Name", "a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')").WithOrigin("format=k8s-long-name"),
 			},
 		},
+		{
+			name: "invalid label key",
+			obj: &networking.NetworkPolicy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "foo",
+					Namespace: "bar",
+					Labels:    map[string]string{"Invalid Key": "val"},
+				},
+			},
+			expectedErrs: field.ErrorList{
+				field.Invalid(field.NewPath("metadata", "labels"), "Invalid Key", "name part must consist of alphanumeric characters, '-', '_' or '.', and must start and end with an alphanumeric character (e.g. 'MyName',  or 'my.name',  or '123-abc', regex used for validation is '([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9]')").WithOrigin("format=k8s-label-key"),
+			},
+		},
 	}
 
 	for _, tt := range tests {
