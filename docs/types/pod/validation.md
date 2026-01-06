@@ -2,8 +2,8 @@
 
 | Field Path | Go Type | Validation Tags | Reasoning / Notes |
 | :--- | :--- | :--- | :--- |
-| `metadata` | `metav1.ObjectMeta` | `+k8s:subfield(name=name)=+k8s:required`<br>`+k8s:subfield(name=name)=+k8s:format=k8s-long-name`<br>`+k8s:subfield(name=labels)=+k8s:eachKey=+k8s:format=k8s-label-key`<br>`+k8s:subfield(name=annotations)=+k8s:eachKey=+k8s:format=k8s-annotation-key` | Pod name is required and must be a DNS subdomain. |
-| `spec.containers` | `[]Container` | `+k8s:required`<br>`+k8s:minItems=1`<br>`+k8s:listType=map`<br>`+k8s:listMapKey=name` | Mandatory list of containers belonging to the pod. |
+| `metadata` | `metav1.ObjectMeta` | `+k8s:subfield(name=name)=+k8s:required`<br>`+k8s:subfield(name=name)=+k8s:format=k8s-long-name`<br>`+k8s:subfield(name=labels)=+k8s:eachKey=+k8s:format=k8s-label-key`<br>`+k8s:subfield(name=annotations)=+k8s:eachKey=+k8s:format=k8s-label-key` | Pod name is required and must be a DNS subdomain. |
+| `spec.containers` | `[]Container` | `+k8s:required`<br>`+k8s:listType=map`<br>`+k8s:listMapKey=name` | Mandatory list of containers belonging to the pod. |
 | `spec.initContainers` | `[]Container` | `+k8s:optional`<br>`+k8s:listType=map`<br>`+k8s:listMapKey=name` | Optional list of initialization containers. |
 | `spec.ephemeralContainers` | `[]EphemeralContainer` | `+k8s:optional`<br>`+k8s:listType=map`<br>`+k8s:listMapKey=name` | Optional list of ephemeral containers. Forbidden on creation. |
 | `spec.volumes` | `[]Volume` | `+k8s:optional`<br>`+k8s:listType=map`<br>`+k8s:listMapKey=name` | Optional list of volumes. |
@@ -30,8 +30,8 @@
 | `envFrom` | `[]EnvFromSource` | `+k8s:optional`<br>`+k8s:listType=atomic` | Sources to populate environment variables. |
 | `volumeMounts` | `[]VolumeMount` | `+k8s:optional`<br>`+k8s:listType=map`<br>`+k8s:listMapKey=mountPath` | Pod volumes to mount. |
 | `volumeDevices` | `[]VolumeDevice` | `+k8s:optional`<br>`+k8s:listType=map`<br>`+k8s:listMapKey=devicePath` | Block devices to use. |
-| `resources.limits` | `ResourceList` | `+k8s:eachKey=+k8s:format=k8s-container-resource-name` | Resource limits. |
-| `resources.requests` | `ResourceList` | `+k8s:eachKey=+k8s:format=k8s-container-resource-name` | Resource requests. |
+| `resources.limits` | `ResourceList` |  | Resource limits. |
+| `resources.requests` | `ResourceList` |  | Resource requests. |
 | `livenessProbe` / `readinessProbe` / `startupProbe` | `*Probe` | `+k8s:optional` | Health check probes. |
 
 ### EphemeralContainer
@@ -80,7 +80,7 @@
 
 | Field Path | Go Type | Validation Tags | Reasoning / Notes |
 | :--- | :--- | :--- | :--- |
-| `name` | `string` | `+k8s:required`<br>`+k8s:format=k8s-relaxed-env-var-name` | Mandatory name. |
+| `name` | `string` | `+k8s:required` | Mandatory name. |
 | `value` | `string` | `+k8s:unionMember`<br/>`+k8s:optional` | Value. |
 | `valueFrom` | `*EnvVarSource` | `+k8s:unionMember`<br/>`+k8s:optional` | Value From. |
 

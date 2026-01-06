@@ -11,7 +11,7 @@
 
 | Field Path | Go Type | Validation Tags | Reasoning / Notes |
 | :--- | :--- | :--- | :--- |
-| `addresses` | `[]string` | `+k8s:required`<br>`+k8s:minItems=1`<br>`+k8s:maxItems=100`<br>`+k8s:listType=set` | Mandatory IP addresses or FQDNs. |
+| `addresses` | `[]string` | `+k8s:required`<br>`+k8s:maxItems=100`<br>`+k8s:listType=set` | Mandatory IP addresses or FQDNs. |
 | `hostname` | `*string` | `+k8s:optional`<br>`+k8s:format=k8s-short-name` | Optional DNS label hostname. |
 | `nodeName` | `*string` | `+k8s:optional`<br>`+k8s:format=k8s-long-name` | Optional node hosting the endpoint. |
 | `zone` | `*string` | `+k8s:optional` | Optional zone name. |

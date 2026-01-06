@@ -15,7 +15,7 @@
 | `webhooks[].objectSelector` | `*metav1.LabelSelector` | `+k8s:optional` | Optional selector to run the webhook only on matching objects. |
 | `webhooks[].sideEffects` | `*SideEffectClass` | `+k8s:required`<br> | Mandatory statement on side effects. `Unknown` and `Some` are typically disallowed for modern webhooks. |
 | `webhooks[].timeoutSeconds` | `*int32` | `+k8s:optional`<br>`+k8s:minimum=1`<br>`+k8s:maximum=30` | Optional timeout in seconds. Defaults to 10. |
-| `webhooks[].admissionReviewVersions` | `[]string` | `+k8s:required`<br>`+k8s:minItems=1`<br>`+k8s:eachVal=`<br>`+k8s:listType=atomic` | Mandatory list of `AdmissionReview` versions the webhook accepts. |
+| `webhooks[].admissionReviewVersions` | `[]string` | `+k8s:required`<br>`+k8s:listType=atomic` | Mandatory list of `AdmissionReview` versions the webhook accepts. |
 | `webhooks[].reinvocationPolicy` | `*ReinvocationPolicyType` | `+k8s:optional`<br> | Optional policy for reinvoking the webhook. Defaults to `Never`. |
 | `webhooks[].matchConditions` | `[]MatchCondition` | `+k8s:optional`<br>`+k8s:maxItems=64`<br>`+k8s:listType=map`<br>`+k8s:listMapKey=name` | Optional list of CEL conditions that must be met for the webhook to be called. |
 

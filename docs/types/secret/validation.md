@@ -3,7 +3,7 @@
 | Field Path | Go Type | Validation Tags | Reasoning / Notes |
 | :--- | :--- | :--- | :--- |
 | `metadata` | `metav1.ObjectMeta` | `+k8s:subfield(name=name)=+k8s:required`<br>`+k8s:subfield(name=name)=+k8s:format=k8s-long-name` | Secret name is required and must be a DNS subdomain. |
-| `data` | `map[string][]byte` | `+k8s:optional`<br>`+k8s:eachKey=+k8s:format=k8s-config-map-key` | Optional map of secret data. Each value is a base64 encoded string. Total size must not exceed 1 MiB. |
+| `data` | `map[string][]byte` | `+k8s:optional` | Optional map of secret data. Each value is a base64 encoded string. Total size must not exceed 1 MiB. |
 | `immutable` | `*bool` | `+k8s:optional` | Optional flag. If true, ensures that data stored in the Secret cannot be updated (only metadata can be modified). |
 | `type` | `SecretType` | `+k8s:optional`<br>`+k8s:immutable` | Optional type used to facilitate programmatic handling of secret data. Immutable after creation. |
 

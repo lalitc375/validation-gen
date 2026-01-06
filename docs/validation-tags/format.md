@@ -17,6 +17,7 @@ Validates that a string conforms to a specific format.
 | Format | Description | Constraints |
 | :--- | :--- | :--- |
 | `k8s-ip` | IPv4 or IPv6 address. | IPv4: octets may have leading zeros. |
+| `k8s-cidr` | IPv4 or IPv6 CIDR. | Valid IP address with a prefix length (e.g., `192.168.1.0/24`). |
 | `k8s-uuid` | RFC 4122 UUID. | Canonical string representation. |
 | `k8s-label-key` | Kubernetes label key. | max 253 chars, optional DNS prefix + `/` + name segment. |
 | `k8s-label-value` | Kubernetes label value. | max 63 chars, alphanumeric + `_`, `-`, `.`. |
@@ -80,6 +81,7 @@ type ResourceList struct {
 ### System
 *   **`k8s-uuid`**: Use for system-assigned unique identifiers (UIDs).
 *   **`k8s-ip`**: Use for network address fields.
+*   **`k8s-cidr`**: Use for network range fields (e.g., `podCIDR`).
 
 ## Migrating from Handwritten Validation
 

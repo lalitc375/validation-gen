@@ -2,9 +2,9 @@
 
 | Field Path | Go Type | Validation Tags | Reasoning / Notes |
 | :--- | :--- | :--- | :--- |
-| `metadata` | `metav1.ObjectMeta` | `+k8s:subfield(name=name)=+k8s:required`<br>`+k8s:subfield(name=name)=+k8s:format=k8s-long-name`<br>`+k8s:subfield(name=labels)=+k8s:eachKey=+k8s:format=k8s-label-key`<br>`+k8s:subfield(name=annotations)=+k8s:eachKey=+k8s:format=k8s-annotation-key` | PersistentVolume name is required and must be a DNS subdomain. |
+| `metadata` | `metav1.ObjectMeta` | `+k8s:subfield(name=name)=+k8s:required`<br>`+k8s:subfield(name=name)=+k8s:format=k8s-long-name`<br>`+k8s:subfield(name=labels)=+k8s:eachKey=+k8s:format=k8s-label-key`<br>`+k8s:subfield(name=annotations)=+k8s:eachKey=+k8s:format=k8s-label-key` | PersistentVolume name is required and must be a DNS subdomain. |
 | `spec.capacity` | `ResourceList` | `+k8s:required` | Mandatory map of resource names to quantities. Only `storage` is typically allowed. |
-| `spec.accessModes` | `[]PersistentVolumeAccessMode` | `+k8s:required`<br>`+k8s:minItems=1`<br>`+k8s:eachVal=` | Mandatory ways the volume can be mounted. `ReadWriteOncePod` cannot be combined with other modes. |
+| `spec.accessModes` | `[]PersistentVolumeAccessMode` | `+k8s:required` | Mandatory ways the volume can be mounted. `ReadWriteOncePod` cannot be combined with other modes. |
 | `spec.persistentVolumeReclaimPolicy` | `PersistentVolumeReclaimPolicy` | `+k8s:optional`<br> | Optional policy for maintenance after release. Defaults to `Retain`. |
 | `spec.storageClassName` | `string` | `+k8s:optional`<br>`+k8s:format=k8s-long-name` | Optional name of the StorageClass. |
 | `spec.mountOptions` | `[]string` | `+k8s:optional`<br>`+k8s:listType=atomic` | Optional list of mount options. |
@@ -72,7 +72,7 @@ The following union members are available under `spec`.
 
 | Field Path | Go Type | Validation Tags | Reasoning / Notes |
 | :--- | :--- | :--- | :--- |
-| `options` | `map[string]string` | `+k8s:eachKey=+k8s:format=k8s-flex-volume-option-key`<br/>`+k8s:optional` | Optional extra command options. |
+| `options` | `map[string]string` | `+k8s:optional` | Optional extra command options. |
 
 ## Types
 

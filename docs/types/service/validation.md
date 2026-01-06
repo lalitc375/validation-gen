@@ -2,7 +2,7 @@
 
 | Field Path | Go Type | Validation Tags | Reasoning / Notes |
 | :--- | :--- | :--- | :--- |
-| `metadata` | `metav1.ObjectMeta` | `+k8s:subfield(name=name)=+k8s:required`<br>`+k8s:subfield(name=name)=+k8s:format=k8s-long-name`<br>`+k8s:subfield(name=labels)=+k8s:eachKey=+k8s:format=k8s-label-key`<br>`+k8s:subfield(name=annotations)=+k8s:eachKey=+k8s:format=k8s-annotation-key` | Service name is required and must be a DNS subdomain. |
+| `metadata` | `metav1.ObjectMeta` | `+k8s:subfield(name=name)=+k8s:required`<br>`+k8s:subfield(name=name)=+k8s:format=k8s-long-name`<br>`+k8s:subfield(name=labels)=+k8s:eachKey=+k8s:format=k8s-label-key`<br>`+k8s:subfield(name=annotations)=+k8s:eachKey=+k8s:format=k8s-label-key` | Service name is required and must be a DNS subdomain. |
 | `spec.ports` | `[]ServicePort` | `+k8s:optional`<br>`+k8s:listType=map`<br>`+k8s:listMapKey=port`<br>`+k8s:listMapKey=protocol` | Optional list of ports. |
 | `spec.selector` | `map[string]string` | `+k8s:optional`<br>`+k8s:eachKey=+k8s:format=k8s-label-key` | Optional label selector for pods. |
 | `spec.clusterIP` | `string` | `+k8s:optional`<br>`+k8s:immutable` | Optional cluster IP address. Immutable after it is set. |

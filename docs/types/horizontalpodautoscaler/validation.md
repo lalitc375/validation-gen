@@ -13,8 +13,8 @@
 | `spec.behavior.scaleDown.stabilizationWindowSeconds` | `*int32` | `+k8s:optional`<br>`+k8s:minimum=0`<br>`+k8s:maximum=3600` | Optional window to consider past recommendations for scaling down. |
 | `spec.behavior.scaleUp.selectPolicy` | `*ScalingPolicySelect` | `+k8s:optional`<br> | Optional policy selection for scaling up. |
 | `spec.behavior.scaleDown.selectPolicy` | `*ScalingPolicySelect` | `+k8s:optional`<br> | Optional policy selection for scaling down. |
-| `spec.behavior.scaleUp.policies` | `[]HPAScalingPolicy` | `+k8s:optional`<br>`+k8s:minItems=1` | List of scaling policies for scaling up. |
-| `spec.behavior.scaleDown.policies` | `[]HPAScalingPolicy` | `+k8s:optional`<br>`+k8s:minItems=1` | List of scaling policies for scaling down. |
+| `spec.behavior.scaleUp.policies` | `[]HPAScalingPolicy` | `+k8s:optional` | List of scaling policies for scaling up. |
+| `spec.behavior.scaleDown.policies" | `[]HPAScalingPolicy` | `+k8s:optional` | List of scaling policies for scaling down. |
 | `spec.behavior.scaleUp.policies[].type` | `HPAScalingPolicyType` | `+k8s:required`<br> | Mandatory policy type. |
 | `spec.behavior.scaleUp.policies[].value` | `int32` | `+k8s:required`<br>`+k8s:minimum=1` | Mandatory policy value. |
 | `spec.behavior.scaleUp.policies[].periodSeconds` | `int32` | `+k8s:required`<br>`+k8s:minimum=1`<br>`+k8s:maximum=1800` | Mandatory policy period in seconds. |
